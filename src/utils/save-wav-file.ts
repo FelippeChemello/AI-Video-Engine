@@ -31,8 +31,8 @@ interface WavConversionOptions {
 
 export function convertToWav(rawData: string, mimeType: string) {
   const options = parseMimeType(mimeType)
-  const wavHeader = createWavHeader(rawData.length, options);
   const buffer = Buffer.from(rawData, 'base64');
+  const wavHeader = createWavHeader(buffer.length, options);
 
   return Buffer.concat([wavHeader, buffer]);
 }
