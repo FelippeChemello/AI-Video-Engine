@@ -48,7 +48,7 @@ export const Portrait: React.FC<z.infer<typeof videoSchema>> = ({ segments, back
 
   return (
     <AbsoluteFill style={{ backgroundColor: background.color, fontFamily }}>
-      {background.video ? (
+      {background.video?.src ? (
         <OffthreadVideo
           src={staticFile(background.video.src)} 
           muted 

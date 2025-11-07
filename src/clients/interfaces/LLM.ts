@@ -9,6 +9,10 @@ export enum Agent {
     SEO_WRITER = 'SEO_WRITER',
     RESEARCHER = 'RESEARCHER',
     MERMAID_GENERATOR = 'MERMAID_GENERATOR',
+    NEWS_REFINER = 'NEWS_REFINER',
+    NEWS_RESEARCHER = 'NEWS_RESEARCHER',
+    NEWSLETTER_WRITER = 'NEWSLETTER_WRITER',
+    NEWSLETTER_REVIEWER = 'NEWSLETTER_REVIEWER',
 }
 
 enum ModelProvider {
@@ -28,16 +32,46 @@ export const Agents: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'researcher.md'), 'utf-8'),
         model: {
             [ModelProvider.OPENAI]: 'gpt-5',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-0',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-flash',
         },
         responseParser: (response: string) => response.trim(),
+    },
+    NEWS_RESEARCHER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-researcher.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
+            [ModelProvider.GEMINI]: 'gemini-2.5-pro',
+        },
+        responseParser: (response: string) => response.trim(),
+    },
+    NEWS_REFINER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-refiner.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
+            [ModelProvider.GEMINI]: 'gemini-2.5-flash',
+        },
+        responseParser: (response: string) => response.trim(),
+    },
+    NEWSLETTER_WRITER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-writer.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
+            [ModelProvider.GEMINI]: 'gemini-2.5-pro',
+        },
+        responseParser: (response: string) => {
+            const match = response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            return match ? match[0] : response.replace(/```\w*\n/g, '').replace(/```/g, '').trim();
+        },
     },
     SCRIPT_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'writer.md'), 'utf-8'),
         model: {
             [ModelProvider.OPENAI]: 'gpt-5',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-0',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-pro',
         },
         responseParser: (response: string) => {
@@ -49,7 +83,19 @@ export const Agents: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'reviewer.md'), 'utf-8'),
         model: {
             [ModelProvider.OPENAI]: 'gpt-5',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-0',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
+            [ModelProvider.GEMINI]: 'gemini-2.5-pro',
+        },
+        responseParser: (response: string) => {
+            const match = response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            return match ? match[0] : response.replace(/```\w*\n/g, '').replace(/```/g, '').trim();
+        },
+    },
+    NEWSLETTER_REVIEWER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-reviewer.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-pro',
         },
         responseParser: (response: string) => {
@@ -61,7 +107,7 @@ export const Agents: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'seo.md'), 'utf-8'),
         model: {
             [ModelProvider.OPENAI]: 'gpt-5',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-0',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-pro',
         },
         responseParser: (response: string) => {
@@ -73,7 +119,7 @@ export const Agents: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'mermaid-generator.md'), 'utf-8'),
         model: {
             [ModelProvider.OPENAI]: 'gpt-5',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-0',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-pro',
         },
         responseParser: (response: string) => response.trim()

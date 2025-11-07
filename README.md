@@ -28,6 +28,11 @@ Brainrot Video Maker is a Node.js toolkit that orchestrates multiple LLMs, textâ
 Create a `.env` file at the project root with the following entries:
 
 - `GEMINI_API_KEY`
+- `GOOGLE_SERP_API_KEY`
+- `GOOGLE_SERP_ID`
+- `GMAIL_CLIENT_ID`
+- `GMAIL_CLIENT_SECRET`
+- `GMAIL_REFRESH_TOKEN`
 - `MFA_BASE_URL`
 - `MFA_API_KEY`
 - `AENEAS_BASE_URL`
@@ -35,7 +40,8 @@ Create a `.env` file at the project root with the following entries:
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `NOTION_TOKEN`
-- `NOTION_DATABASE_ID`
+- `NOTION_DEFAULT_DATABASE_ID`
+- `NOTION_NEWS_DATABASE_ID`
 - `ELEVENLABS_API_KEY`
 
 These variables are validated in [`src/config/env.ts`](src/config/env.ts).

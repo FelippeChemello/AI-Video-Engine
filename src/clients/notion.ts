@@ -24,7 +24,19 @@ const client = new Client({
 })
 
 export class NotionClient implements ScriptManagerClient {
-    async saveScript(script: ScriptWithTitle, seo: SEO, thumbnailFilenames?: Array<string>, formats?: Array<'Portrait' | 'Landscape'>): Promise<void> {
+    private readonly databaseId: string;
+
+    constructor(databaseId?: string) {
+        this.databaseId = databaseId || ENV.NOTION_DEFAULT_DATABASE_ID;
+    }
+
+    async saveScript(
+        script: ScriptWithTitle, 
+        seo: SEO, 
+        thumbnailFilenames?: Array<string>, 
+        formats?: Array<'Portrait' | 'Landscape'>,
+        scriptSrc?: string
+    ): Promise<void> {
         console.log(`[NOTION] Saving script ${script.title}`);
 
         let audioFileId: string | null = null;
@@ -32,6 +44,13 @@ export class NotionClient implements ScriptManagerClient {
             console.log(`[NOTION] Uploading audio: ${script.audioSrc}`);
 
             audioFileId = await this.uploadFile(path.join(publicDir, script.audioSrc));
+        }
+
+        let scriptFileId: string | null = null;
+        if (scriptSrc) {
+            console.log(`[NOTION] Uploading script source file: ${scriptSrc}`);
+
+            scriptFileId = await this.uploadFile(path.join(outputDir, scriptSrc));
         }
 
         const thumbnailFileIds: Array<string> = [];
@@ -46,9 +65,10 @@ export class NotionClient implements ScriptManagerClient {
             }
         }
 
+
         const page = await client.pages.create({
             parent: {
-                database_id: ENV.NOTION_DATABASE_ID,
+                database_id: this.databaseId,
             },
             properties: {
                 Name: {
@@ -70,7 +90,10 @@ export class NotionClient implements ScriptManagerClient {
                     rich_text: [{ type: 'text', text: { content: `${seo.title}\n\n${seo.description}\n\n${seo.hashtags.join(" ")}` } }],
                 },
                 Output: { 
-                    files: thumbnailFileIds.map((fileId) => ({ type: 'file_upload', file_upload: { id: fileId } }))
+                    files: [...thumbnailFileIds, scriptFileId].filter(Boolean).map((fileId) => ({
+                        type: 'file_upload',
+                        file_upload: { id: fileId! },
+                    }))
                 } 
             }
         })
@@ -148,10 +171,10 @@ export class NotionClient implements ScriptManagerClient {
     }
 
     async retrieveScript(status: ScriptStatus, limit?: number): Promise<Array<ScriptWithTitle>> {
-        console.log(`[NOTION] Retrieving script with status: ${status}`);
+        console.log(`[NOTION] Retrieving scripts with status: ${status}`);
 
         const response = await client.databases.query({
-            database_id: ENV.NOTION_DATABASE_ID,
+            database_id: this.databaseId,
             filter: {
                 property: 'Status',
                 status: {
@@ -174,6 +197,7 @@ export class NotionClient implements ScriptManagerClient {
             const audioFileName = page.properties.Audio.files[0].name;
             const compositions = page.properties.Composition.multi_select.map((c) => c.name);
             const title = page.properties.Name.title[0].text.content;
+            const seo = page.properties.Title.rich_text[0].text.content;
             const segments: ScriptWithTitle['segments'] = [];
 
             console.log(`[NOTION] [PAGE:${pageIndex}/${response.results.length}]: ${title}`);
@@ -251,6 +275,7 @@ export class NotionClient implements ScriptManagerClient {
                 audioMimeType: mimeType,
                 audioExtension: extension,
                 compositions,
+                seo
             });
         }
 
@@ -287,11 +312,11 @@ export class NotionClient implements ScriptManagerClient {
             secondaryColor: "oklch(29.3% 0.066 243.157)",
             seed: v4(),
             video: {
-                src: randomBackgroundVideo.src,
+                src: randomBackgroundVideo?.src,
             }
         }
 
-        console.log(`[NOTION] Selected background video: ${randomBackgroundVideo.name}`);
+        console.log(`[NOTION] Selected background video: ${randomBackgroundVideo?.name || 'none'}`);
 
         return { background };
     }
@@ -342,7 +367,7 @@ export class NotionClient implements ScriptManagerClient {
         console.log('[NOTION] Downloading outputs');
 
         const response = await client.databases.query({
-            database_id: ENV.NOTION_DATABASE_ID,
+            database_id: this.databaseId,
             filter: {
                 property: 'Status',
                 status: {

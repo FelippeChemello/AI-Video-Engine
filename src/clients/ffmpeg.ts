@@ -1,7 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
 
 import { VideoEditorClient } from './interfaces/VideoEditor'
-import { AudioEditorClient } from './interfaces/AudioEditorClient';
+import { AudioEditorClient } from './interfaces/AudioEditor';
 
 export class FFmpegClient implements VideoEditorClient, AudioEditorClient {
     async speedUpVideo(videoPath: string, speedFactor: number): Promise<string> {

@@ -38,7 +38,7 @@ export const RemotionRoot: React.FC = () => {
           }
         }}
         calculateMetadata={async ({ props }) => {
-          if (props.background.video && !props.background.video.initTime) {
+          if (props.background.video?.src && !props.background.video.initTime) {
             const video = await fetch(staticFile(props.background.video.src)).then((res) => res.blob());
             const videoDuration = await new Promise<number>((resolve) => {
               const videoElement = document.createElement("video");
@@ -102,7 +102,7 @@ export const RemotionRoot: React.FC = () => {
           }
         }}
         calculateMetadata={async ({ props }) => {
-          if (props.background.video && !props.background.video.initTime) {
+          if (props.background.video?.src && !props.background.video.initTime) {
             const video = await fetch(staticFile(props.background.video.src)).then((res) => res.blob());
             const videoDuration = await new Promise<number>((resolve) => {
               const videoElement = document.createElement("video");

@@ -14,33 +14,34 @@ import { VideoEditorClient } from './clients/interfaces/VideoEditor';
 import { FFmpegClient } from './clients/ffmpeg';
 import { AeneasClient } from './clients/aeneas';
 import { VisemeAlignerClient } from './clients/interfaces/VisemeAligner';
-import { AudioEditorClient } from './clients/interfaces/AudioEditorClient';
+import { AudioEditorClient } from './clients/interfaces/AudioEditor';
+import { VideoUploaderClient } from './clients/interfaces/VideoUploader';
+import { Youtube } from './clients/youtube';
+import { ENV } from './config/env';
 
-const SPEEDUP_AUDIO_FACTOR = 1.3;
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
-const MAX_DURATION_OF_SHORT_VIDEO = 170;
+const MAX_DURATION_OF_SHORT_VIDEO = 175;
 
-const scriptManager: ScriptManagerClient = new NotionClient()
+const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
+const newsScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_NEWS_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
 const visemeAligner: VisemeAlignerClient = new MFAClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
+const uploader: VideoUploaderClient = new Youtube();
 
-const scripts = await scriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
+const defaultScripts = await defaultScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
+const newsScripts = await newsScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
+
+const scripts = [...defaultScripts, ...newsScripts];
+if (scripts.length === 0) {
+    console.log('No scripts to process.');
+    process.exit(0);
+}
 
 for (const script of scripts) {
     console.log(`Downloading assets for script ${script.title}...`);
-    await scriptManager.downloadAssets(script);
-
-    if (script.audioSrc) {
-        console.log(`Applying base speed up to audio for script ${script.title}...`);
-
-        const audioFilePath = path.join(publicDir, script.audioSrc);
-        const speededUpAudioPath = await editor.speedUpAudio(audioFilePath, SPEEDUP_AUDIO_FACTOR);
-        console.log(`Speeded up audio saved at: ${speededUpAudioPath}`);
-
-        script.audioSrc = path.basename(speededUpAudioPath);
-    }
+    await defaultScriptManager.downloadAssets(script);
 }
 
 const rendererBundle = await renderer.getBundle();
@@ -63,9 +64,9 @@ for (const script of scripts) {
     }
 
     try {
-        await scriptManager.updateScriptStatus(script.id, ScriptStatus.IN_PROGRESS);
+        await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.IN_PROGRESS);
 
-        const assets = await scriptManager.retrieveAssets(script.id);
+        const assets = await defaultScriptManager.retrieveAssets(script.id);
         script.background = assets.background;
 
         const audioFilePath = path.join(publicDir, script.audioSrc);
@@ -121,9 +122,24 @@ for (const script of scripts) {
             }
         }
 
-        console.log(`Saving output for script ${script.title}...`);
-        await scriptManager.saveOutput(script.id, videos)
-        await scriptManager.updateScriptStatus(script.id, ScriptStatus.DONE);
+        console.log(`Saving output...`);
+        await defaultScriptManager.saveOutput(script.id, videos)
+        await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.DONE);
+
+        console.log('Uploading videos...');
+        const [title, ...description] = script.seo ? script.seo.split('\n') : [script.title, ''];
+
+        for (const videoPath of videos) {
+            const uploadResult = await uploader.uploadVideo(
+                videoPath,
+                title,
+                description.join('\n'),
+            );
+
+            console.log(`Video uploaded: ${uploadResult.url}`);
+        }
+
+        await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.PUBLISHED);
 
         console.log(`Cleaning up assets for script ${script.title}...`);
 
@@ -147,7 +163,7 @@ for (const script of scripts) {
     } catch (error) {
         console.error(`Error processing script ${script.title}:`, error);
 
-        await scriptManager.updateScriptStatus(script.id, ScriptStatus.ERROR);
+        await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.ERROR);
         
         const audioFilePath = path.join(publicDir, script.audioSrc);
         if (fs.existsSync(audioFilePath)) {

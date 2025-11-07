@@ -49,6 +49,11 @@ export type NotionMainDatabasePage = {
       type: 'files';
       files: Array<{ name: string, type: 'file' | 'file_upload' | 'external', file: { url: string, expiry_type: string }}>;
     };
+    Title: {
+      id: string;
+      type: 'rich_text';
+      rich_text: Array<{ text: { content: string } }>;
+    }
   }
 }
 
@@ -84,6 +89,7 @@ export type ScriptWithTitle = {
         end: number;
         viseme: string;
     }>;
+    seo?: string;
 }
 
 export type SEO = {

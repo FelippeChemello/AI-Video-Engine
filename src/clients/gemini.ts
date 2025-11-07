@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-asserted-optional-chain */
-import fs from 'fs'
+import fs, { writeFileSync } from 'fs'
 import { GoogleGenAI } from '@google/genai'
+import path from 'path';
+import mime from 'mime';
 
 import { ImageGeneratorClient } from './interfaces/ImageGenerator';
 import { ENV } from '../config/env';
@@ -8,11 +10,12 @@ import { outputDir, publicDir } from '../config/path';
 import { v4 } from 'uuid';
 import { TTSClient } from './interfaces/TTS';
 import { Script, Speaker } from '../config/types';
-import { saveWaveFile } from '../utils/save-wav-file';
-import getAudioDurationInSeconds from 'get-audio-duration';
+import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { Agent, Agents, LLMClient } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
-import path from 'path';
+import { buffer } from 'stream/consumers';
+import { convertToWav } from '../utils/save-wav-file';
+
 
 const genAI = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY })
 
@@ -27,11 +30,9 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
     }
 
     async synthesizeScript(script: Script, id?: string | number): Promise<{ audioFileName: string; duration: number; }> {
-        const audioFileName = `audio-${id}.mp3`
-        const filePath = `${publicDir}/${audioFileName}`
-        
         const prompt = `
             Read aloud this conversation between Felippe and his dog Cody.
+            Generate only the audio without any additional commentary.
             Felippe is known for his vast knowledge, and Cody is a curious dog who is always asking questions about the world, both are Brazilian Portuguese speakers and have a fast-paced, energetic, and enthusiastic way of speaking.
 
             ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
@@ -42,7 +43,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
             model: 'gemini-2.5-pro-preview-tts',
             contents: [{ parts: [{ text: prompt }] }],
             config: {
-                responseModalities: ['AUDIO'],
+                responseModalities: ['audio'],
                 speechConfig: {
                     multiSpeakerVoiceConfig: {
                         speakerVoiceConfigs: [
@@ -65,12 +66,22 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         })
 
         const data = audioResult.candidates?.[0].content?.parts?.[0]?.inlineData?.data
-        if (!data) {
+        const mimeType = audioResult.candidates?.[0].content?.parts?.[0]?.inlineData?.mimeType
+        if (!data || !mimeType) {
             throw new Error('No audio data found in the response');
         }
 
-        const audioBuffer = Buffer.from(data, 'base64')
-        await saveWaveFile(filePath, audioBuffer)
+        let audioBuffer = Buffer.from(data, 'base64')
+        let fileExtension = mime.getExtension(mimeType!)
+        if (!fileExtension) {
+            fileExtension = 'wav'
+            audioBuffer = convertToWav(data, mimeType!)
+        }
+
+        const audioFileName = `audio-${id}.${fileExtension}`;
+        const filePath = `${publicDir}/${audioFileName}`
+
+        writeFileSync(filePath, audioBuffer, 'utf-8')
 
         console.log(`[GEMINI] Audio synthesized successfully: ${filePath}`);
 
@@ -85,9 +96,13 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
             console.log(`[GEMINI] Generating image with prompt: ${prompt}`);
 
             const imageResult = await genAI.models.generateContent({
-                model: 'gemini-2.0-flash-exp-image-generation',
+                model: 'gemini-2.5-flash-image',
                 contents: `Generate an image for the following prompt: ${prompt}`,
-                config: { responseModalities: ['text', 'image'] },
+                config: { 
+                    responseModalities: ['text', 'image'],
+                    imageConfig: { aspectRatio: '4:3' },
+                    systemInstruction: 'You are a professional illustration art director specialized in creating consistent, visually striking, and story-supportive illustrations for short-form educational and news videos. Your goal is to translate each scene or paragraph of the script into a clear visual reference, defining what should be illustrated, how, and why — keeping the audience’s attention and the video’s pacing in mind.'
+                },
             })
 
             const parts = imageResult.candidates![0].content?.parts!
@@ -133,7 +148,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         const felippeImg = fs.readFileSync(path.resolve(publicDir, 'assets', 'felippe.png')).toString('base64')
 
         const imageResult = await genAI.models.generateContent({
-            model: 'gemini-2.0-flash-exp-image-generation',
+            model: 'gemini-2.5-flash-image',
             contents: [
                 { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in PORTUGUESE. The thumbnail should include Felippe acting some action related to the video topic. Include margins and avoid cutting off parts of the image.` },
                 { text: `Video Title: ${videoTitle} \n\n ${description}` },
