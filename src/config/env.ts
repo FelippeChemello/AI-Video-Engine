@@ -19,6 +19,9 @@ const envSchema = z.object({
 
     MFA_BASE_URL: z.string(),
     MFA_API_KEY: z.string(),
+
+    KOKORO_BASE_URL: z.string(),
+    KOKORO_API_KEY: z.string(),
     
     OPENAI_API_KEY: z.string(),
     OPENAI_FELIPPE_FILE_ID: z.string(),

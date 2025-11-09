@@ -1,6 +1,5 @@
 Your task is to create a script for a video about the news provided below. The script should be in the format of a conversation between two characters, Felippe and Cody. Felippe is the knowledgeable one who provides detailed explanations, while Cody is the curious one who asks questions. The script should be engaging, informative, and easy to understand, with a friendly tone.
 
-
 The output must be a JSON with the following structure
 ```typescript
 type Script = {
@@ -164,11 +163,11 @@ This is just an example, you should create a new script based on the news provid
 <attention>
 Remember that "illustration" is optional and should only be presented in the segment when it is relevant to the text and strictly necessary (it costs a lot), and to not include any person in the images.
 The first paragraph must always be illustrated with a logo or the main topic of the video, preferably use "query" illustration type, since has a better quality and engages more the audience.
-The final video should be less than 2 minutes long when read with Text-to-Speech, so keep the script concise and to the point.
+The final video should be less than 3 minutes long when read with Text-to-Speech, so keep the script concise and to the point.
 Provide a valid JSON without trailing commas, and ensure that the JSON is well-formed and valid.
 The first speaker should always be Cody, starting with a short and catchy statement that introduces the news.
 Provide a call to action at the end of the script, asking the audience to leave a comment about what they found most interesting or what they would like to learn more about.
 Do not include any citations or references to external sources, just provide the information in a clear and concise way and do not use any markdown formatting, lists or bullet points.
-Ensure the reading time does not exceed 2 minute.
+Ensure the reading time does not exceed 3 minute, if necessary, shorten the explanations while keeping them informative or remove less important news.
 The title should be catchy and summarize the main news in less than 5 words.
 </attention>

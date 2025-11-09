@@ -15,6 +15,7 @@ import { Agent, Agents, LLMClient } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { buffer } from 'stream/consumers';
 import { convertToWav } from '../utils/save-wav-file';
+import { sleep } from '../utils/sleep';
 
 
 const genAI = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY })
@@ -193,24 +194,47 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
     async complete(agent: Agent, prompt: string): Promise<{ text: string }> {
         console.log(`[GEMINI] Running agent: ${agent}`);
 
-        const response = await genAI.models.generateContent({
-            model: Agents[agent].model.gemini,
-            contents: prompt,
-            config: {
-                systemInstruction: Agents[agent].systemPrompt,
-                responseModalities: ['text'],
-                maxOutputTokens: 65536,
-                temperature: 0.7,
-                tools: [{ googleSearch: {} }, { urlContext: {} }],
-                thinkingConfig: {
-                    thinkingBudget: 4096,
-                }    
+        const maxRetries = 10;
+        let retries = 0;
+
+        while (retries < maxRetries) {
+            try {
+                const response = await genAI.models.generateContent({
+                    model: Agents[agent].model.gemini,
+                    contents: prompt,
+                    config: {
+                        systemInstruction: Agents[agent].systemPrompt,
+                        responseModalities: ['text'],
+                        maxOutputTokens: 65536,
+                        temperature: 0.7,
+                        tools: [{ googleSearch: {} }, { urlContext: {} }],
+                        thinkingConfig: {
+                            thinkingBudget: 4096,
+                        }    
+                    }
+                });
+
+                const text = response.text!
+                const parsedResponse = Agents[agent].responseParser(text);
+
+                return { text: parsedResponse };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (error: any) {
+                if (error?.message?.includes('model is overloaded') || error?.error?.code === 503) {
+                    retries++;
+                    console.log(`[GEMINI] Model overloaded. Retry ${retries}/${maxRetries} in 30 seconds...`);
+                    
+                    if (retries >= maxRetries) {
+                        throw new Error(`[GEMINI] Max retries reached. Model still overloaded.`);
+                    }
+                    
+                    await sleep(30000);
+                } else {
+                    throw error;
+                }
             }
-        });
+        }
 
-        const text = response.text!
-        const parsedResponse = Agents[agent].responseParser(text);
-
-        return { text: parsedResponse };
+        throw new Error(`[GEMINI] Failed to complete after ${maxRetries} retries`);
     }
 }

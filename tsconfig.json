@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
-    "moduleResolution": "node"
+    "moduleResolution": "bundler"
   },
   "exclude": [
     "remotion.config.ts"

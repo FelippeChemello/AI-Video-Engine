@@ -2,13 +2,13 @@ import {
   AbsoluteFill,
   Audio,
   Img,
-  OffthreadVideo,
   random,
   Sequence,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import {Video} from '@remotion/media'
 import { useMemo } from "react";
 import { z } from "zod";
 import { loadFont } from "@remotion/google-fonts/TitanOne";
@@ -21,7 +21,7 @@ import Text from "./Text";
 import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
 import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
 import { ImageWithBackground } from "./ImageWithBackground";
-import { WrinkledPaper } from "./WrinkledPaper";
+import { TechTunnel } from "./TechTunnel";
 
 const { fontFamily } = loadFont();
 
@@ -49,13 +49,21 @@ export const Portrait: React.FC<z.infer<typeof videoSchema>> = ({ segments, back
   return (
     <AbsoluteFill style={{ backgroundColor: background.color, fontFamily }}>
       {background.video?.src ? (
-        <OffthreadVideo
+        <Video
           src={staticFile(background.video.src)} 
           muted 
-          startFrom={(background.video.initTime || 0) * fps}
-          className="absolute top-0 left-0 w-full h-full object-cover"
+          trimBefore={(background.video.initTime || 0) * fps}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+          loop
         />
-      ) : <WrinkledPaper />}
+      ) : <TechTunnel />}
       
 
       <Audio src={staticFile(audioSrc)} />

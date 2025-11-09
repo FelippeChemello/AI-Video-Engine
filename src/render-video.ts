@@ -28,7 +28,7 @@ const audioAligner: AudioAlignerClient = new AeneasClient();
 const visemeAligner: VisemeAlignerClient = new MFAClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
-const uploader: VideoUploaderClient = new Youtube();
+const youtube: VideoUploaderClient = new Youtube();
 
 const defaultScripts = await defaultScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
 const newsScripts = await newsScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
@@ -130,7 +130,7 @@ for (const script of scripts) {
         const [title, ...description] = script.seo ? script.seo.split('\n') : [script.title, ''];
 
         for (const videoPath of videos) {
-            const uploadResult = await uploader.uploadVideo(
+            const uploadResult = await youtube.uploadVideo(
                 videoPath,
                 title,
                 description.join('\n'),

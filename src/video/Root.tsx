@@ -8,6 +8,7 @@ import { Portrait } from "./Portrait";
 import { FallingBalls, fallingBallsSchema } from "./FallingBalls";
 import { v4 } from "uuid";
 import { WrinkledPaper } from "./WrinkledPaper";
+import { TechTunnel } from "./TechTunnel";
 
 const FPS = 30;
 
@@ -164,6 +165,14 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1920}
         height={1080}
+      />
+      <Composition
+        id="TechTunnel"
+        component={TechTunnel}
+        durationInFrames={3000}
+        fps={FPS}
+        width={1080}
+        height={1920}
       />
     </>
   );

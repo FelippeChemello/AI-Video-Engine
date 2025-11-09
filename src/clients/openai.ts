@@ -84,7 +84,13 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         const response = await openai.responses.create({
             model: 'gpt-4.1-mini',
             input: prompt,
-            tools: [{ type: 'image_generation', quality: 'medium', background: 'opaque' }],
+            tools: [{ 
+                type: 'image_generation', 
+                quality: 'medium', 
+                background: 'opaque',
+                // @ts-expect-error model 'gpt-image-1-mini' is not in the type definitions yet
+                model: 'gpt-image-1-mini'
+            }],
         })
 
         const imageData = response.output

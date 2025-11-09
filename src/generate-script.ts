@@ -4,7 +4,6 @@ import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
 import { ScriptWithTitle } from './config/types';
-import { sleep } from './utils/sleep';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
@@ -19,10 +18,13 @@ import { SearcherClient } from './clients/interfaces/Searcher';
 import { Google } from './clients/google';
 import { CodeRendererClient } from './clients/interfaces/CodeRenderer';
 import { Shiki } from './clients/shiki';
+import { TTSClient } from './clients/interfaces/TTS';
+import { KokoroClient } from './clients/kokoro';
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
 const gemini: LLMClient & ImageGeneratorClient = new GeminiClient();
+const kokoro: TTSClient = new KokoroClient();
 const mermaid: MermaidRendererClient = new Mermaid();
 const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
@@ -59,68 +61,51 @@ Felippe is known for his vast knowledge, and Cody is a curious dog who is always
 ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
     `, 'utf-8');
 
-    // Add rate limiting to avoid exceeding the FREE TIER limit from Gemini
-    // https://ai.google.dev/gemini-api/docs/rate-limits?hl=pt-br#free-tier
-    const maxIterationsPerMinute = 8;
-    let iterationsInMinute = 0;
-    let minuteStartTime = Date.now();
+    const audio = await kokoro.synthesizeScript(script.segments, 'full-script');
+    script.audioSrc = audio.audioFileName;
 
-    for (const [index, segment] of script.segments.entries()) {
+    await Promise.all(script.segments.map(async (segment, index) => {
         if (segment.illustration) {
             let mediaSrc: string | undefined;
-
+    
             switch (segment.illustration.type) {
                 case 'mermaid': 
                     console.log(`[${index + 1}/${script.segments.length}] Generating mermaid`)
-
+    
                     const { text: mermaidCode } = await openai.complete(Agent.MERMAID_GENERATOR, `Specification: ${segment.illustration.description} \n\nContext: ${segment.text}`);
                     const exportedMermaid = await mermaid.exportMermaid(mermaidCode, index);
-
+    
                     mediaSrc = exportedMermaid.mediaSrc;
                     break;
-
+    
                 case 'query': 
                     console.log(`[${index + 1}/${script.segments.length}] Searching for image`);
-
+    
                     const imageSearched = await google.searchImage(segment.illustration.description, index)
                     
                     mediaSrc = imageSearched.mediaSrc
                     break;
-
+    
                 case 'code': 
                     console.log(`[${index + 1}/${script.segments.length}] Generating code`)
-
+    
                     const codeGenerated = await shiki.exportCode(segment.illustration.description, index);
                     
                     mediaSrc = codeGenerated.mediaSrc;
                     break;
-
+    
                 case 'image_generation': 
                 default: 
-                    if (iterationsInMinute >= maxIterationsPerMinute) {
-                        const currentTime = Date.now();
-                        const elapsedTime = currentTime - minuteStartTime;
-                        if (elapsedTime < 60000) {
-                            const waitTime = 60000 - elapsedTime;
-
-                            console.log(`Rate limit reached. Waiting for ${(waitTime / 1000).toFixed(1)} seconds...`);
-                            await sleep(waitTime);
-                        }
-                        iterationsInMinute = 0;
-                        minuteStartTime = Date.now();
-                    }
-
                     console.log(`[${index + 1}/${script.segments.length}] Generating image`);
-                    const mediaGenerated = await gemini.generate(segment.illustration.description, index);
+                    const mediaGenerated = await openai.generate(segment.illustration.description, index);
                     
                     mediaSrc = mediaGenerated.mediaSrc;
-                    iterationsInMinute++;
                     break;
             }
-
+    
             script.segments[index].mediaSrc = mediaSrc;
         }
-    }
+    }));
 
     console.log("Generating SEO content...");
     const { text: seoText } = await openai.complete(Agent.SEO_WRITER, review)
