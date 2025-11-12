@@ -129,7 +129,7 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
     }));
 
     console.log("Generating SEO content...");
-    const { text: seoText } = await openai.complete(Agent.SEO_WRITER, review || scriptText);
+    const { text: seoText } = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
     const seo = JSON.parse(seoText);
 
     await scriptManagerClient.saveScript(script, seo, [], ENABLED_FORMATS, path.basename(scriptTextFile));
