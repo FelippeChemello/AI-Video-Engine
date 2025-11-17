@@ -116,7 +116,6 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
     async generateThumbnail(
         videoTitle: string, 
-        videoDescription: string, 
         orientation: 'Portrait' | 'Landscape'
     ): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle}`);
@@ -133,7 +132,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                 content: [
                     {
                         type: 'input_text',
-                        text: `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".\n\n ${videoDescription}`,
+                        text: `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
                     },
                     {
                         type: 'input_image',

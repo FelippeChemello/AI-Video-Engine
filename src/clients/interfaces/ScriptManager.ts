@@ -8,6 +8,10 @@ export interface ScriptManagerClient {
         formats?: Array<'Landscape' | 'Portrait'>,
         scriptSrc?: string
     ): Promise<void>;
+    setSEO(
+        scriptId: string,
+        seo: SEO,
+    ): Promise<void>;
     retrieveScript(status: ScriptStatus, limit?: number): Promise<Array<ScriptWithTitle>>;
     updateScriptStatus(scriptId: string, status: ScriptStatus): Promise<void>;
     retrieveAssets(scriptId: string): Promise<{ background: VideoBackground }>;

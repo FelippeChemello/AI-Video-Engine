@@ -11,7 +11,6 @@ import { titleToFileName } from './utils/title-to-filename';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
 import { AnthropicClient } from "./clients/anthropic";
-import { GeminiClient } from "./clients/gemini";
 import { Mermaid } from './clients/mermaid';
 import { MermaidRendererClient } from './clients/interfaces/MermaidRenderer';
 import { SearcherClient } from './clients/interfaces/Searcher';
@@ -126,11 +125,13 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
         }
     }));
 
-    console.log("Generating SEO content...");
-    const { text: seoText } = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
-    const seo = JSON.parse(seoText);
-
-    await scriptManagerClient.saveScript(script, seo, [], ENABLED_FORMATS, path.basename(scriptTextFile));
+    await scriptManagerClient.saveScript(
+        script, 
+        { title: script.title, description: '', hashtags: [], tags: [] },
+        [], 
+        ENABLED_FORMATS, 
+        path.basename(scriptTextFile)
+    );
 
     console.log(`Cleaning up assets...`)
     for (const segment of script.segments) {

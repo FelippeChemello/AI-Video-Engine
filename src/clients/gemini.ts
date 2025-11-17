@@ -164,7 +164,7 @@ ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
         }
     }
 
-    async generateThumbnail(videoTitle: string, description: string, orientation: 'Portrait' | 'Landscape'): Promise<{ mediaSrc?: string; }> {
+    async generateThumbnail(videoTitle: string, orientation: 'Portrait' | 'Landscape'): Promise<{ mediaSrc?: string; }> {
         let mediaSrc: string | undefined
 
         console.log(`[GEMINI] Generating thumbnail for script: ${videoTitle}`);
@@ -175,7 +175,7 @@ ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
             model: 'gemini-2.5-flash-image',
             contents: [
                 { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in PORTUGUESE. The thumbnail should include Felippe acting some action related to the video topic. Include margins and avoid cutting off parts of the image.` },
-                { text: `Video Title: ${videoTitle} \n\n ${description}` },
+                { text: `Video Title: ${videoTitle}` },
                 { inlineData: { mimeType: 'image/png', data: felippeImg } }
             ],
             config: { 

@@ -19,6 +19,8 @@ import { AudioEditorClient } from './clients/interfaces/AudioEditor';
 import { VideoUploaderClient } from './clients/interfaces/VideoUploader';
 import { Youtube } from './clients/youtube';
 import { ENV } from './config/env';
+import { Agent, LLMClient } from './clients/interfaces/LLM';
+import { OpenAIClient } from './clients/openai';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
@@ -27,6 +29,7 @@ const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DE
 const newsScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_NEWS_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
 const visemeAligner: VisemeAlignerClient = new MFAClient();
+const openai: LLMClient = new OpenAIClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
 const youtube: VideoUploaderClient = new Youtube();
@@ -130,16 +133,20 @@ for (const scriptIndex in scripts) {
         await defaultScriptManager.saveOutput(script.id, videos)
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.DONE);
 
-        console.log('Uploading videos...');
-        const [title, ...description] = script.seo ? script.seo.split('\n') : [script.title, ''];
+        console.log("Generating SEO content...");
+        const { text: seoText } = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
+        const seo = JSON.parse(seoText);
 
+        await defaultScriptManager.setSEO(script.id, seo);
+
+        console.log('Uploading videos...');
         for (const videoPath of videos) {
             const uploadResult = await youtube.uploadVideo(
                 videoPath,
-                title,
-                description.join('\n'),
+                seo.title,
+                `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
                 undefined,
-                undefined,
+                seo.tags,
                 dayjs().add(Number(scriptIndex), 'hours').toDate()
             );
 

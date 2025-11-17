@@ -1,4 +1,4 @@
-/* eslint-disable @remotion/deterministic-randomness, no-case-declarations, @typescript-eslint/no-explicit-any */
+/* eslint-disable @remotion/deterministic-randomness */
 import fs from 'fs'
 import { BlockObjectRequest, Client } from "@notionhq/client";
 import { v4 } from 'uuid';
@@ -169,6 +169,20 @@ export class NotionClient implements ScriptManagerClient {
             console.log(`[NOTION] Appended block: ${segment.text}`);
         }
     }
+
+    async setSEO(scriptId: string, seo: SEO): Promise<void> {
+        console.log(`[NOTION] Setting SEO for script ${scriptId}`);
+
+        await client.pages.update({
+            page_id: scriptId,
+            properties: {
+                Title: {
+                    rich_text: [{ type: 'text', text: { content: `${seo.title}\n\n${seo.description}\n\n${seo.hashtags?.join(" ") || seo.tags?.join(" #") || ''}` } }],
+                },
+            }
+        });
+    }
+
 
     async retrieveScript(status: ScriptStatus, limit?: number): Promise<Array<ScriptWithTitle>> {
         console.log(`[NOTION] Retrieving scripts with status: ${status}`);
@@ -511,13 +525,18 @@ export class NotionClient implements ScriptManagerClient {
             return fileUpload.id
         } else {
             const mimeType = getMimetypeFromFilename(filePath).mimeType;
+            const isText = mimeType.startsWith('text/');
+
+            const data = isText
+                ? new Blob([fs.readFileSync(filePath, 'utf-8')], { type: mimeType })
+                : new Blob([fs.readFileSync(filePath)], { type: mimeType });
 
             const fileUpload = await client.fileUploads.create({ mode: 'single_part' });
             const file = await client.fileUploads.send({
                 file_upload_id: fileUpload.id,
                 file: {
                     filename: filePath.split('/').pop() || 'file',
-                    data: new Blob([await fs.openAsBlob(filePath)], { type: mimeType }),
+                    data,
                 }
             })
 

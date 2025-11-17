@@ -107,21 +107,22 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
         }
     }));
 
-    console.log("Generating SEO content...");
-    const { text: seoText } = await openai.complete(Agent.SEO_WRITER, review)
-    const seo = JSON.parse(seoText);
-
     const thumbnails = [];
     for (const format of ENABLED_FORMATS) {
         console.log(`Generating ${format} thumbnail...`);
-        const { mediaSrc: thumbnailSrc } = await openai.generateThumbnail(script.title, seo.description, format)
+        const { mediaSrc: thumbnailSrc } = await openai.generateThumbnail(script.title, format)
 
         if (thumbnailSrc) {
             thumbnails.push(thumbnailSrc);
         }
     }
 
-    await scriptManagerClient.saveScript(script, seo, thumbnails, ENABLED_FORMATS)
+    await scriptManagerClient.saveScript(
+        script, 
+        { title: script.title, description: '', hashtags: [], tags: [] },
+        thumbnails, 
+        ENABLED_FORMATS
+    )
 
     console.log(`Cleaning up assets...`)
     for (const segment of script.segments) {
