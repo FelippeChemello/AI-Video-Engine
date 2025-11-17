@@ -12,11 +12,11 @@ export class GrokClient implements LLMClient {
     async complete(agent: Agent, prompt: string): Promise<{ text: string }> {
         console.log(`[GROK] Running agent: ${agent}`);
 
-        // @ts-expect-error xAI specific tools parameter
         const response = await openai.responses.create({
             model: Agents[agent].model.grok,
             instructions: Agents[agent].systemPrompt,
             input: prompt,
+            // @ts-expect-error xAI specific tools parameter
             tools: [{ type: 'web_search' }, { type: 'x_search' }]
         });
 
