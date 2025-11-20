@@ -1,8 +1,7 @@
- 
 import fs from 'fs';
 import path from 'path';
 
-import { outputDir, publicDir } from './config/path';
+import { publicDir } from './config/path';
 import { ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -11,32 +10,21 @@ import { titleToFileName } from './utils/title-to-filename';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
 import { AnthropicClient } from "./clients/anthropic";
-import { Mermaid } from './clients/mermaid';
-import { MermaidRendererClient } from './clients/interfaces/MermaidRenderer';
-import { SearcherClient } from './clients/interfaces/Searcher';
-import { Google } from './clients/google';
-import { CodeRendererClient } from './clients/interfaces/CodeRenderer';
-import { Shiki } from './clients/shiki';
 import { NewsletterFetcher, NewsletterSource } from './clients/interfaces/NewsletterFetcher';
 import { GmailClient } from './clients/gmail';
-import { TTSClient } from './clients/interfaces/TTS';
 import { ENV } from './config/env';
-import { AudioEditorClient } from './clients/interfaces/AudioEditor';
-import { FFmpegClient } from './clients/ffmpeg';
-import { VibeVoiceClient } from './clients/vibevoice';
+import { saveScriptFile } from './services/save-script-file';
+import { synthesizeSpeech } from './services/synthesize-speech';
+import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
+import { generateIllustration } from './services/generate-illustration';
+import { cleanupFiles } from './services/cleanup-files';
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_NEWS_DATABASE_ID);
-const editor: AudioEditorClient = new FFmpegClient();
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
-const vibevoice: TTSClient = new VibeVoiceClient();
-const mermaid: MermaidRendererClient = new Mermaid();
-const shiki: CodeRendererClient = new Shiki();
-const google: SearcherClient = new Google();
 const gmail: NewsletterFetcher = new GmailClient();
 
 const ENABLED_FORMATS: Array<'Portrait' | 'Landscape'> = ['Portrait'];
-const MAX_AUDIO_DURATION_FOR_SHORTS = 170; // seconds
 
 const newsletterFile = process.argv[2]
 const newsletter: { title: string; content: string } = newsletterFile 
@@ -59,71 +47,17 @@ try {
 for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
     console.log(`Processing script: ${script.title}`);
 
-    const scriptTextFile = path.join(outputDir, `${titleToFileName(script.title)}.txt`);
-    fs.writeFileSync(scriptTextFile, `
-Read aloud this conversation between Felippe and his dog Cody. Cody has a curious and playful personality with an animated character like voice, while Felippe is knowledgeable and enthusiastic.
-Felippe is known for his vast knowledge, and Cody is a curious dog who is always asking questions about the world, both are Brazilian Portuguese speakers and have a super very fast-paced, energetic, and enthusiastic way of speaking.
+    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
-${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
-
-    const audio = await vibevoice.synthesizeScript(script.segments, 'full-script');
-
-    if (audio.duration && audio.duration > MAX_AUDIO_DURATION_FOR_SHORTS) {
-        console.log(`Audio duration ${audio.duration}s exceeds maximum for shorts. Speeding up audio...`);
-
-        const speedFactor = audio.duration / MAX_AUDIO_DURATION_FOR_SHORTS;
-        const audioPath = path.join(publicDir, audio.audioFileName);
-
-        const speededUpAudioPath = await editor.speedUpAudio(audioPath, speedFactor);
-        fs.unlinkSync(audioPath);
-
-        audio.audioFileName = path.basename(speededUpAudioPath);
-    }
-
+    const audio = await synthesizeSpeech(script.segments, MAX_AUDIO_DURATION_FOR_SHORTS);
     script.audioSrc = audio.audioFileName;
 
-    await Promise.all(script.segments.map(async (segment, index) => {
-        if (segment.illustration) {
-            let mediaSrc: string | undefined;
-
-            switch (segment.illustration.type) {
-                case 'mermaid': 
-                    console.log(`[${index + 1}/${script.segments.length}] Generating mermaid`)
-
-                    const { text: mermaidCode } = await openai.complete(Agent.MERMAID_GENERATOR, `Specification: ${segment.illustration.description} \n\nContext: ${segment.text}`);
-                    const exportedMermaid = await mermaid.exportMermaid(mermaidCode, index);
-
-                    mediaSrc = exportedMermaid.mediaSrc;
-                    break;
-
-                case 'query': 
-                    console.log(`[${index + 1}/${script.segments.length}] Searching for image`);
-
-                    const imageSearched = await google.searchImage(segment.illustration.description, index)
-                    
-                    mediaSrc = imageSearched.mediaSrc
-                    break;
-
-                case 'code': 
-                    console.log(`[${index + 1}/${script.segments.length}] Generating code`)
-
-                    const codeGenerated = await shiki.exportCode(segment.illustration.description, index);
-                    
-                    mediaSrc = codeGenerated.mediaSrc;
-                    break;
-
-                case 'image_generation': 
-                default: 
-                    console.log(`[${index + 1}/${script.segments.length}] Generating image`);
-                    const mediaGenerated = await openai.generate(segment.illustration.description, index);
-                    
-                    mediaSrc = mediaGenerated.mediaSrc;
-                    break;
-            }
-
-            script.segments[index].mediaSrc = mediaSrc;
-        }
-    }));
+    await Promise.all(
+        script.segments.map(async (segment) => {
+            const mediaSrc = await generateIllustration(segment);
+            segment.mediaSrc = mediaSrc;
+        })
+    );
 
     await scriptManagerClient.saveScript(
         script, 
@@ -133,14 +67,11 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
         path.basename(scriptTextFile)
     );
 
-    console.log(`Cleaning up assets...`)
-    for (const segment of script.segments) {
-        if (segment.mediaSrc) {
-            const imagePath = path.join(publicDir, segment.mediaSrc);
-            fs.unlinkSync(imagePath);
-        }
-    }
-
-    fs.unlinkSync(scriptTextFile);
-    fs.unlinkSync(path.join(publicDir, script.audioSrc!));
+    cleanupFiles([
+        scriptTextFile,
+        path.join(publicDir, script.audioSrc!),
+        ...script.segments
+            .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
+            .filter(Boolean) as Array<string>
+    ])
 }

@@ -1,0 +1,1 @@
+export const MAX_AUDIO_DURATION_FOR_SHORTS = 170; // in seconds
