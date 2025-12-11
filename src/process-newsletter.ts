@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
-import { ScriptWithTitle } from './config/types';
+import { Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
@@ -35,7 +35,7 @@ const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
 const gmail: NewsletterFetcher = new GmailClient();
 
-const ENABLED_FORMATS: Array<'Portrait' | 'Landscape'> = ['Portrait'];
+const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
 const MAX_AUDIO_DURATION_FOR_SHORTS = 170; // seconds
 
 const newsletterFile = process.argv[2]
@@ -80,7 +80,7 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
         audio.audioFileName = path.basename(speededUpAudioPath);
     }
 
-    script.audioSrc = audio.audioFileName;
+    script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     await Promise.all(script.segments.map(async (segment, index) => {
         if (segment.illustration) {
@@ -125,13 +125,11 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
         }
     }));
 
-    await scriptManagerClient.saveScript(
+    await scriptManagerClient.saveScript({
         script, 
-        { title: script.title, description: '', hashtags: [], tags: [] },
-        [], 
-        ENABLED_FORMATS, 
-        path.basename(scriptTextFile)
-    );
+        formats: ENABLED_FORMATS, 
+        scriptSrc: path.basename(scriptTextFile)
+    });
 
     console.log(`Cleaning up assets...`)
     for (const segment of script.segments) {
@@ -142,5 +140,8 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`, 'utf-8');
     }
 
     fs.unlinkSync(scriptTextFile);
-    fs.unlinkSync(path.join(publicDir, script.audioSrc!));
+
+    for (const audio of script.audio!) {
+        fs.unlinkSync(path.join(publicDir, audio.src));
+    }
 }

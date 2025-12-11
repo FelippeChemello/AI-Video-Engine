@@ -8,8 +8,8 @@ import { ImageGeneratorClient } from './interfaces/ImageGenerator';
 import { ENV } from '../config/env';
 import { outputDir, publicDir } from '../config/path';
 import { v4 } from 'uuid';
-import { TTSClient } from './interfaces/TTS';
-import { Script, Speaker } from '../config/types';
+import { Speaker, TTSClient, voices } from './interfaces/TTS';
+import { Orientation, Script } from '../config/types';
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { Agent, Agents, LLMClient } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
@@ -18,11 +18,6 @@ import { sleep } from '../utils/sleep';
 
 const genAI = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY })
 const genAIPro = new GoogleGenAI({ apiKey: ENV.GEMINI_PAID_API_KEY })
-
-const voices: { [key in keyof typeof Speaker]: string } = {
-    Cody: 'Puck',
-    Felippe: 'Achird',
-}
 
 export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient {
     async synthesize(_: Speaker, text: string, id?: string | number): Promise<{ audioFileName: string; duration: number; }> {
@@ -58,13 +53,13 @@ ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
                                     {
                                         speaker: Speaker.Cody,
                                         voiceConfig: {
-                                            prebuiltVoiceConfig: { voiceName: voices.Cody }
+                                            prebuiltVoiceConfig: { voiceName: voices.Cody.gemini }
                                         }
                                     },
                                     {
                                         speaker: Speaker.Felippe,
                                         voiceConfig: {
-                                            prebuiltVoiceConfig: { voiceName: voices.Felippe }
+                                            prebuiltVoiceConfig: { voiceName: voices.Felippe.gemini }
                                         }
                                     }
                                 ]
@@ -164,7 +159,7 @@ ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
         }
     }
 
-    async generateThumbnail(videoTitle: string, orientation: 'Portrait' | 'Landscape'): Promise<{ mediaSrc?: string; }> {
+    async generateThumbnail(videoTitle: string, orientation: Orientation): Promise<{ mediaSrc?: string; }> {
         let mediaSrc: string | undefined
 
         console.log(`[GEMINI] Generating thumbnail for script: ${videoTitle}`);

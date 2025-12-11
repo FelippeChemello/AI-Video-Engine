@@ -1,6 +1,6 @@
 /* eslint-disable no-async-promise-executor */
 
-import { ElevenLabsClient } from 'elevenlabs';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { v4 } from 'uuid';
 import path from 'path';
 import fs from 'fs'
@@ -9,17 +9,11 @@ import { Readable } from 'stream';
 
 import { ENV } from '../config/env'
 import { publicDir } from '../config/path';
-import { Speaker } from '../config/types';
-import { TTSClient } from './interfaces/TTS';
+import { Speaker, TTSClient, voices } from './interfaces/TTS';
 
 const elevenlabs = new ElevenLabsClient({
     apiKey: ENV.ELEVENLABS_API_KEY,
 });
-
-const voices: { [key in keyof typeof Speaker]: string } = {
-    Cody: 'PoHUWWWMHFrA8z7Q88pu',
-    Felippe: '7u8qsX4HQsSHJ0f8xsQZ',
-}
 
 export class ElevenLabsTTSClient implements TTSClient {
     public async synthesizeScript(script: { speaker: Speaker, text: string }[], id: string | number = v4()): Promise<{ audioFileName: string, duration: number }> {
@@ -34,10 +28,9 @@ export class ElevenLabsTTSClient implements TTSClient {
                 const audioFileName = `audio-${id !== undefined ? id : v4()}.mp3`;
                 const audioFilePath = path.resolve(publicDir, audioFileName);
 
-                const speech = await elevenlabs.textToSpeech.convert(voices[voice], {
+                const speech = await elevenlabs.textToSpeech.convert(voices[voice].elevenlabs, {
                     text,
-                    model_id: 'eleven_multilingual_v2',
-                    output_format: 'mp3_44100_128',
+                    outputFormat: 'mp3_44100_128',
                 })
 
                 const stream = Readable.fromWeb(speech as any);

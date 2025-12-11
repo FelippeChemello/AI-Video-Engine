@@ -1,6 +1,5 @@
 import {
   AbsoluteFill,
-  Audio,
   Img,
   staticFile,
   Sequence,
@@ -11,8 +10,9 @@ import {
 import { useMemo } from "react";
 import { z } from "zod";
 import { loadFont } from "@remotion/google-fonts/TitanOne";
+import { Audio } from '@remotion/media'
 
-import { Speaker, videoSchema, Viseme } from "../config/types";
+import { videoSchema, Viseme } from "../config/types";
 import CodyImg from "../../public/assets/cody.png";
 import parseSentences from "./text-parser";
 import Text from "./Text";
@@ -21,10 +21,11 @@ import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
 import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
 import { ImageWithBackground } from "./ImageWithBackground";
 import { WrinkledPaper } from "./WrinkledPaper";
+import { Speaker } from "../clients/interfaces/TTS";
 
 const { fontFamily } = loadFont();
 
-export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, audioSrc, visemes }) => {
+export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, audio }) => {
   const { fps, durationInFrames } = useVideoConfig()
   const frame = useCurrentFrame();
 
@@ -49,7 +50,15 @@ export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, bac
     <AbsoluteFill style={{ fontFamily }}>
       <WrinkledPaper />
 
-      <Audio src={staticFile(audioSrc)} />
+      {audio.map((audio, audioIndex, audios) => (
+        <Sequence 
+          key={audioIndex} 
+          from={audioIndex === 0 ? 0 : audios.slice(0, audioIndex).reduce((acc, a) => { return acc + a.duration! }, 0) * fps} 
+          durationInFrames={(audio.duration || 0) * fps}
+        >
+          <Audio src={staticFile(audio.src)} />
+        </Sequence>
+      ))}
 
       {segments.map((segment, index) => {
         const { speaker, alignment, duration } = segment;
@@ -58,7 +67,7 @@ export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, bac
         }, 0);
         const mediaType = segment.mediaSrc && getMimetypeFromFilename(segment.mediaSrc).type;
 
-        const { viseme }  = visemes?.find(v => v.start * fps <= frame && v.end * fps > frame) || { viseme: undefined };
+        const { viseme }  = audio[index]?.visemes?.find(v => v.start * fps <= frame && v.end * fps > frame) || { viseme: undefined };
 
         const sentences = parseSentences(alignment)
 

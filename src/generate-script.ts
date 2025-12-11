@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
-import { ScriptWithTitle } from './config/types';
+import { compositionOrientationMap, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
@@ -30,7 +30,7 @@ const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
-const ENABLED_FORMATS: Array<'Portrait' | 'Landscape'> = ['Portrait'];
+const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
 
 const topic = process.argv[2]
 if (!topic) {
@@ -62,7 +62,7 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
     `, 'utf-8');
 
     const audio = await vibevoice.synthesizeScript(script.segments, 'full-script');
-    script.audioSrc = audio.audioFileName;
+    script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     await Promise.all(script.segments.map(async (segment, index) => {
         if (segment.illustration) {
@@ -110,19 +110,18 @@ ${script.segments.map((s) => `${s.speaker}: ${s.text}`).join('\n')}
     const thumbnails = [];
     for (const format of ENABLED_FORMATS) {
         console.log(`Generating ${format} thumbnail...`);
-        const { mediaSrc: thumbnailSrc } = await openai.generateThumbnail(script.title, format)
+        const { mediaSrc: thumbnailSrc } = await openai.generateThumbnail(script.title, compositionOrientationMap[format])
 
         if (thumbnailSrc) {
             thumbnails.push(thumbnailSrc);
         }
     }
 
-    await scriptManagerClient.saveScript(
-        script, 
-        { title: script.title, description: '', hashtags: [], tags: [] },
-        thumbnails, 
-        ENABLED_FORMATS
-    )
+    await scriptManagerClient.saveScript({
+        script,
+        thumbnailsSrc: thumbnails,
+        formats: ENABLED_FORMATS,
+    })
 
     console.log(`Cleaning up assets...`)
     for (const segment of script.segments) {

@@ -2,16 +2,11 @@ import fs from 'fs';
 import { v4 } from 'uuid';
 
 import { ENV } from "../config/env";
-import { Script, Speaker } from '../config/types';
+import { Script } from '../config/types';
 import { getAudioDurationInSeconds } from "get-audio-duration";
-import { TTSClient } from './interfaces/TTS';
+import { Speaker, TTSClient, voices as voicesMap } from './interfaces/TTS';
 import path from 'path';
 import { publicDir } from '../config/path';
-
-const voicesMap: { [key in keyof typeof Speaker]: string } = {
-    Cody: 'Speaker 0',
-    Felippe: 'Speaker 1',
-}
 
 export class VibeVoiceClient implements TTSClient {
     async synthesize(voice: Speaker, text: string, id?: string | number): Promise<{ audioFileName: string; duration?: number; }> {
@@ -21,7 +16,7 @@ export class VibeVoiceClient implements TTSClient {
     async synthesizeScript(script: Script, id?: string | number): Promise<{ audioFileName: string; duration?: number; }> {
         console.log(`[VIBEVOICE] Synthesizing script with ${script.length} segments`);
         
-        const text = script.map(line => `${voicesMap[line.speaker]}: ${line.text}`).join('\n');
+        const text = script.map(line => `${voicesMap[line.speaker].vibevoice}: ${line.text}`).join('\n');
         const voices = ['Cody', 'Felippe'];
 
         const response = await fetch(`${ENV.VIBEVOICE_BASE_URL}`, {

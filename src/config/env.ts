@@ -21,9 +21,6 @@ const envSchema = z.object({
     MFA_BASE_URL: z.string(),
     MFA_API_KEY: z.string(),
 
-    KOKORO_BASE_URL: z.string(),
-    KOKORO_API_KEY: z.string(),
-
     VIBEVOICE_BASE_URL: z.string(),
     VIBEVOICE_API_KEY: z.string(),
     

@@ -1,13 +1,16 @@
-import { ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../../config/types";
+import { Compositions, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../../config/types";
+
+export type SaveScriptParams = {
+    script: ScriptWithTitle;
+    seo?: SEO;
+    thumbnailsSrc?: Array<string>;
+    formats?: Array<Compositions>;
+    scriptSrc?: string;
+    settings?: any;
+};
 
 export interface ScriptManagerClient {
-    saveScript(
-        script: ScriptWithTitle, 
-        seo: SEO, 
-        thumbnailsSrc?: Array<string>, 
-        formats?: Array<'Landscape' | 'Portrait'>,
-        scriptSrc?: string
-    ): Promise<void>;
+    saveScript(script: SaveScriptParams): Promise<void>;
     setSEO(
         scriptId: string,
         seo: SEO,

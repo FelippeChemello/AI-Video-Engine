@@ -6,10 +6,10 @@ import { v4 } from 'uuid';
 
 import { ENV } from '../config/env';
 import { outputDir, publicDir } from '../config/path';
-import { TTSClient } from './interfaces/TTS';
-import { Script, Speaker } from '../config/types';
+import { TTSClient, voices, Speaker } from './interfaces/TTS';
+import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
-import { ImageGeneratorClient } from './interfaces/ImageGenerator';
+import { ImageGeneratorClient, Config as ImageConfig } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 
@@ -17,24 +17,16 @@ const openai = new OpenAI({
     apiKey: ENV.OPENAI_API_KEY,
 });
 
-const voices: { [key in keyof typeof Speaker]: string } = {
-    Cody: 'coral',
-    Felippe: 'ash',
-}
-
-const voicePrompt: { [key in keyof typeof Speaker]: string } = {
-    Cody: 'Brazilian, Bright, energetic, neutral accent with playful tones and friendly curiosity. Inquisitive and slightly excitable, genuinely amazed and eager to learn about new things. Very Quick Pace, spontaneous questions with natural enthusiasm, balanced by moments of thoughtful curiosity.',
-    Felippe: 'Brazilian, Bright, energetic, young, neutral accent, sophisticated, with clear articulation. Slightly professorial, speaking with pride and confidence in his vast knowledge, yet always approachable. Clearly articulate Portuguese and technical terms authentically. Very Fast Paced.',
-}
-
 export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient {
     async synthesize(speaker: Speaker, text: string, id?: string | number) {
         console.log(`[OPENAI] Synthesizing speech for speaker: ${speaker}, text length: ${text.length}`);
         
+        const [voice, voicePrompt] = voices[speaker].openai.split(' - ');
+        
         const response = await openai.audio.speech.create({
             model: 'gpt-4o-mini-tts',
-            voice: voices[speaker],
-            instructions: voicePrompt[speaker],
+            voice,
+            instructions: voicePrompt,
             input: text,
         })
 
@@ -78,7 +70,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { audioFileName }
     }
 
-    async generate(prompt: string, id?: string | number): Promise<{ mediaSrc?: string; }> {
+    async generate(prompt: string, id?: string | number, config?: ImageConfig): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating image with prompt: ${prompt}`);
         
         const response = await openai.responses.create({
@@ -88,7 +80,8 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                 type: 'image_generation', 
                 quality: 'medium', 
                 background: 'opaque',
-                model: 'gpt-image-1-mini'
+                model: 'gpt-image-1-mini',
+                ...config,
             }],
         })
 
@@ -116,7 +109,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
     async generateThumbnail(
         videoTitle: string, 
-        orientation: 'Portrait' | 'Landscape'
+        orientation: Orientation
     ): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle}`);
         

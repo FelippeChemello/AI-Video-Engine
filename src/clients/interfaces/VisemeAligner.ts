@@ -1,4 +1,11 @@
-import { AudioAlignerDTO, AudioToVisemeResponse } from "../../config/types";
+import { AudioAlignerDTO, AudioToVisemeResponse, Compositions } from "../../config/types";
+
+export const compositionShouldAlignVisemes: Record<Compositions, boolean> = {
+  DebateLandscape: false,
+  DebatePortrait: false,
+  Landscape: true,
+  Portrait: true,
+};  
 
 export const Phone2Viseme: Record<string, string> = {
   'k': 'B',

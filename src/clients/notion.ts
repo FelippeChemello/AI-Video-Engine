@@ -5,14 +5,15 @@ import { v4 } from 'uuid';
 import splitFile from 'split-file'
 import { SingleBar } from 'cli-progress'
 
-import { NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, Speaker, VideoBackground } from "../config/types";
+import { NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../config/types";
 import { ENV } from "../config/env";
 import { outputDir, publicDir } from "../config/path";
-import { ScriptManagerClient } from './interfaces/ScriptManager';
+import { SaveScriptParams, ScriptManagerClient } from './interfaces/ScriptManager';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 import console from 'console';
 import path from 'path';
 import { sleep } from '../utils/sleep';
+import { Speaker } from './interfaces/TTS';
 
 const MAX_FILE_SIZE_SINGLE_PART = 20 * 1024 * 1024; // 20 MB
 const MAX_FILE_SIZE_PART = 10 * 1024 * 1024; // 10 MB
@@ -20,7 +21,7 @@ const MAX_RETRIES_ON_FILE_UPLOAD = 3;
 
 const client = new Client({
     auth: ENV.NOTION_TOKEN,
-    timeoutMs: 180000, // 2 minutes
+    timeoutMs: 180000, // 3 minutes
 })
 
 export class NotionClient implements ScriptManagerClient {
@@ -30,20 +31,16 @@ export class NotionClient implements ScriptManagerClient {
         this.databaseId = databaseId || ENV.NOTION_DEFAULT_DATABASE_ID;
     }
 
-    async saveScript(
-        script: ScriptWithTitle, 
-        seo: SEO, 
-        thumbnailFilenames?: Array<string>, 
-        formats?: Array<'Portrait' | 'Landscape'>,
-        scriptSrc?: string
-    ): Promise<void> {
+    async saveScript({ script, formats, scriptSrc, seo, settings, thumbnailsSrc }: SaveScriptParams): Promise<void> {
         console.log(`[NOTION] Saving script ${script.title}`);
 
-        let audioFileId: string | null = null;
-        if (script.audioSrc) {
-            console.log(`[NOTION] Uploading audio: ${script.audioSrc}`);
-
-            audioFileId = await this.uploadFile(path.join(publicDir, script.audioSrc));
+        const audioFileIds: string[] = []
+        if (script.audio?.length) {
+            for (const audioSrc of script.audio.map(a => a.src)) {
+                console.log(`[NOTION] Uploading audio: ${audioSrc}`);
+                const fileId = await this.uploadFile(path.join(publicDir, audioSrc));
+                audioFileIds.push(fileId);
+            }
         }
 
         let scriptFileId: string | null = null;
@@ -54,8 +51,8 @@ export class NotionClient implements ScriptManagerClient {
         }
 
         const thumbnailFileIds: Array<string> = [];
-        if (thumbnailFilenames?.length) {
-            for (const thumbnailFilename of thumbnailFilenames) {
+        if (thumbnailsSrc?.length) {
+            for (const thumbnailFilename of thumbnailsSrc) {
                 console.log(`[NOTION] Uploading thumbnail: ${thumbnailFilename}`);
 
                 const thumbnailFileId = await this.uploadFile(path.join(outputDir, thumbnailFilename));
@@ -64,7 +61,6 @@ export class NotionClient implements ScriptManagerClient {
                 }
             }
         }
-
 
         const page = await client.pages.create({
             parent: {
@@ -81,20 +77,23 @@ export class NotionClient implements ScriptManagerClient {
                     multi_select: formats ? formats.map((format) => ({ name: format })) : []
                 },
                 Audio: {
-                    files: audioFileId ? [{
-                        type: 'file_upload',
-                        file_upload: { id: audioFileId },
-                    }] : [],
+                    files: audioFileIds ? audioFileIds.map((fileId) => ({ type: 'file_upload', file_upload: { id: fileId } })) : []
                 },
                 Title: {
-                    rich_text: [{ type: 'text', text: { content: `${seo.title}\n\n${seo.description}\n\n${seo.hashtags?.join(" ") || seo.tags?.join(" #") || ''}` } }],
+                    rich_text: [{ type: 'text', text: { content: seo ? `${seo.title}\n\n${seo.description}\n\n${seo.hashtags?.join(" ") || seo.tags?.join(" #") || ''}` : '' } }],
                 },
                 Output: { 
                     files: [...thumbnailFileIds, scriptFileId].filter(Boolean).map((fileId) => ({
                         type: 'file_upload',
                         file_upload: { id: fileId! },
                     }))
-                } 
+                },
+                Date: {
+                    date: { start: new Date().toISOString() },
+                },
+                Settings: {
+                    rich_text: [{ type: 'text', text: { content: settings ? JSON.stringify(settings) : '' } }],
+                },
             }
         })
 
@@ -122,7 +121,7 @@ export class NotionClient implements ScriptManagerClient {
             }
 
             const children: BlockObjectRequest[] = []
-            if (imageId && segment.illustration) {
+            if (imageId) {
                 children.push({
                     type: 'column_list',
                     column_list: {
@@ -144,7 +143,7 @@ export class NotionClient implements ScriptManagerClient {
                                         image: {
                                             type: 'file_upload',
                                             file_upload: { id: imageId },
-                                            caption: [{ type: 'text', text: { content: segment.illustration.description } }]
+                                            caption: segment.illustration ? [{ type: 'text', text: { content: segment.illustration.description } }] : [],
                                         }
                                     }]
                                 }
@@ -166,7 +165,7 @@ export class NotionClient implements ScriptManagerClient {
                 children
             })
 
-            console.log(`[NOTION] Appended block: ${segment.text}`);
+            console.log(`[NOTION] Appended block: ${segment.speaker} - ${segment.text.substring(0, 30)}...`);
         }
     }
 
@@ -183,6 +182,41 @@ export class NotionClient implements ScriptManagerClient {
         });
     }
 
+    private async getColumnListData(blockId: string): Promise<{ text: string; mediaSrc: string }> {
+      const columnList = await client.blocks.children.list({
+            block_id: blockId,
+            page_size: 10,
+        })
+
+        const columnChildren = await Promise.all((columnList.results as Array<BlockObjectRequest>).map(async (columnBlock) => {
+            const columnChildren = await client.blocks.children.list({
+                // @ts-expect-error id exists in block
+                block_id: columnBlock.id,
+                page_size: 10,
+            }) as unknown as { results: Array<BlockObjectRequest> };
+
+            const column = columnChildren.results[0];
+
+            switch (column.type) {
+                case 'image':
+                    // @ts-expect-error file is an object
+                    return { mediaSrc: column.image.file.url };
+                case 'paragraph':
+                    const text = column.paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
+                    return { text };
+                case 'video':
+                    // @ts-expect-error file is an object
+                    return { mediaSrc: column.video.file.url };
+            }
+        }))
+
+        const columnData = columnChildren.reduce((acc, child) => ({
+            ...acc,
+            ...child,
+        }), { text: '', mediaSrc: '' });
+
+        return columnData;
+    }
 
     async retrieveScript(status: ScriptStatus, limit?: number): Promise<Array<ScriptWithTitle>> {
         console.log(`[NOTION] Retrieving scripts with status: ${status}`);
@@ -206,12 +240,17 @@ export class NotionClient implements ScriptManagerClient {
             pageIndex++;
 
             // @ts-expect-error file is an object
-            const audioSrc = page.properties.Audio.files[0].file.url
-            // @ts-expect-error file has a name
-            const audioFileName = page.properties.Audio.files[0].name;
+            const audios = page.properties.Audio.files.map((file) => ({ url: file.file.url, name: file.name }));
             const compositions = page.properties.Composition.multi_select.map((c) => c.name);
             const title = page.properties.Name.title[0].text.content;
             const seo = page.properties.Title.rich_text[0].text.content;
+            const settings = page.properties.Settings.rich_text[0]?.text.content ? JSON.parse(page.properties.Settings.rich_text[0].text.content) : undefined;
+            const outputs = page.properties.Output.files;
+
+            const thumbnails = outputs
+              .filter(file => file.name.includes('Thumbnail'))
+              .map(file => ({ filename: file.name, src: file.file.url }));
+
             const segments: ScriptWithTitle['segments'] = [];
 
             console.log(`[NOTION] [PAGE:${pageIndex}/${response.results.length}]: ${title}`);
@@ -222,74 +261,92 @@ export class NotionClient implements ScriptManagerClient {
             }) as unknown as { results: Array<BlockObjectRequest> };
 
             let lastSpeaker: Speaker = Speaker.Cody;
-            for (const [blockIndex, block] of blocks.results.entries()) {
-                // @ts-expect-error id exists in block
-                console.log(`[NOTION] [BLOCK:${blockIndex+1}/${blocks.results.length}]: ${block.id}`);
+            if (blocks.results[0].type === 'paragraph' || blocks.results[0].type === 'column_list') {
+                let firstText = ""
+                switch (blocks.results[0].type) {
+                    case 'paragraph':
+                        firstText = blocks.results[0].paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
+                        break;
+                    case 'column_list':
+                        // @ts-expect-error id exists in block
+                        const { text } = await this.getColumnListData(blocks.results[0].id);
+                        firstText = text;
+                        break
+                }
 
+                const speakerMatch = firstText.match(/\[(\w+)\]/);
+                if (speakerMatch) {
+                    const speakerName = speakerMatch[1];
+                    if (Object.values(Speaker).includes(speakerName as Speaker)) {
+                        lastSpeaker = speakerName as Speaker;
+                    }
+                }
+            }
+
+            for (const [blockIndex, block] of blocks.results.entries()) {
                 switch (block.type) {
                     case 'divider':
                         lastSpeaker = lastSpeaker === Speaker.Cody ? Speaker.Felippe : Speaker.Cody;
                         break;
 
                     case 'paragraph':
-                        const text = block.paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
-                        if (text.trim() === '') {
+                        const rawText = block.paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
+                        if (rawText.trim() === '') {
                             break;
                         }
+
+                        const speaker = rawText.match(/\[(\w+)\]/);
+                        if (speaker) {
+                            const speakerName = speaker[1];
+                            if (Object.values(Speaker).includes(speakerName as Speaker)) {
+                                lastSpeaker = speakerName as Speaker;
+                            }
+                        }
                         
-                        segments.push({ text, speaker: lastSpeaker });
+                        segments.push({ text: rawText, speaker: lastSpeaker });
                         break;
 
                     case 'column_list':
-                        const columnList = await client.blocks.children.list({
-                            // @ts-expect-error id exists in block
-                            block_id: block.id,
-                            page_size: 10,
-                        })
+                        // @ts-expect-error id exists in block
+                        const { mediaSrc, text } = await this.getColumnListData(block.id);
 
-                        const columnChildren = await Promise.all((columnList.results as Array<BlockObjectRequest>).map(async (columnBlock) => {
-                            const columnChildren = await client.blocks.children.list({
-                                // @ts-expect-error id exists in block
-                                block_id: columnBlock.id,
-                                page_size: 10,
-                            }) as unknown as { results: Array<BlockObjectRequest> };
-
-                            const column = columnChildren.results[0];
-
-                            switch (column.type) {
-                                case 'image':
-                                    // @ts-expect-error file is an object
-                                    return { mediaSrc: column.image.file.url };
-                                case 'paragraph':
-                                    const text = column.paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
-                                    return { text };
-                                case 'video':
-                                    // @ts-expect-error file is an object
-                                    return { mediaSrc: column.video.file.url };
+                        const speakerInText = text.match(/\[(\w+)\]/);
+                        if (speakerInText) {
+                            const speakerName = speakerInText[1];
+                            if (Object.values(Speaker).includes(speakerName as Speaker)) {
+                                lastSpeaker = speakerName as Speaker;
                             }
-                        }))
+                        }
 
-                        const columnData = columnChildren.reduce((acc, child) => ({
-                            ...acc,
-                            ...child,
-                        }), { text: '', mediaSrc: '' });
-
-                        segments.push({ speaker: lastSpeaker, ...columnData });
+                        segments.push({ speaker: lastSpeaker, text, mediaSrc });
                         break;
+                }
+
+                if (block.type !== 'divider') {
+                  console.log(`[NOTION] [BLOCK:${blockIndex+1}/${blocks.results.length}]: ${lastSpeaker} - ${segments.at(-1)?.text.substring(0, 30) || ''}...`);
                 }
             }
 
-            const { extension, mimeType } = getMimetypeFromFilename(audioFileName);
+            const audio = audios.map((audio) => {
+                const { extension, mimeType } = getMimetypeFromFilename(audio.name);
+
+                return {
+                    src: audio.url,
+                    extension,
+                    mimeType,
+                }
+            })
+
             
             scripts.push({ 
                 id: page.id,
                 title, 
                 segments, 
-                audioSrc, 
-                audioMimeType: mimeType,
-                audioExtension: extension,
+                audio,
                 compositions,
-                seo
+                seo,
+                settings,
+                thumbnails,
             });
         }
 
@@ -321,7 +378,7 @@ export class NotionClient implements ScriptManagerClient {
         const randomBackgroundVideo = availableBackgroundVideos[Math.floor(Math.random() * availableBackgroundVideos.length)];
 
         const background: VideoBackground = {
-            color: "oklch(70.8% 0 0)",
+            color: "oklch(97% 0 0)",
             mainColor: "oklch(68.5% 0.169 237.323)",
             secondaryColor: "oklch(29.3% 0.066 243.157)",
             seed: v4(),
@@ -338,20 +395,38 @@ export class NotionClient implements ScriptManagerClient {
     async downloadAssets(script: ScriptWithTitle): Promise<ScriptWithTitle> {
         console.log(`[NOTION] Downloading assets for script ${script.title}`);
 
-        if (script.audioSrc) {
-            console.log(`[NOTION] Downloading audio: ${script.audioSrc}`);
+        for (const thumbnail of script.thumbnails || []) {
+            console.log(`[NOTION] Downloading thumbnail: ${thumbnail.src}`);
 
-            const filePath = `${publicDir}/${v4()}.${script.audioSrc.split('.').pop()?.split('?')[0]}`;
+            const filePath = `${outputDir}/${v4()}.${thumbnail.src.split('.').pop()?.split('?')[0]}`;
 
-            const response = await fetch(script.audioSrc);
+            const response = await fetch(thumbnail.src);
             const buffer = await response.arrayBuffer();
             fs.writeFileSync(filePath, Buffer.from(buffer));
-
+            
             const filename = filePath.split('/').pop()
             if (filename) {
-                script.audioSrc = filename;
-            } else {
-                console.error(`[NOTION] Failed to extract filename from path: ${filePath}`);
+                thumbnail.src = filename;
+            }
+        }
+
+        if (script.audio?.length) {
+            for (const audioSrcIndex in script.audio) {
+                const audioSrc = script.audio[audioSrcIndex].src;
+                console.log(`[NOTION] Downloading audio: ${audioSrc}`);
+
+                const filePath = `${publicDir}/${v4()}.${audioSrc.split('.').pop()?.split('?')[0]}`;
+
+                const response = await fetch(audioSrc);
+                const buffer = await response.arrayBuffer();
+                fs.writeFileSync(filePath, Buffer.from(buffer));
+
+                const filename = filePath.split('/').pop()
+                if (!filename) {
+                    throw new Error(`[NOTION] Failed to extract filename from path: ${filePath}`);
+                } 
+
+                script.audio[audioSrcIndex].src = filename;
             }
         }
 

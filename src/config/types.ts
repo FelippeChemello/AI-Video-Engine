@@ -1,10 +1,28 @@
 import { zColor } from "@remotion/zod-types";
 import { z } from "zod";
+import { Speaker } from "../clients/interfaces/TTS";
 
-export enum Speaker {
-    Cody = 'Cody',
-    Felippe = 'Felippe'
+export enum Compositions {
+    // Dialogue
+    Portrait = 'Portrait',
+    Landscape = 'Landscape',
+
+    // Debate
+    DebatePortrait = 'DebatePortrait',
+    DebateLandscape = 'DebateLandscape',
 }
+
+export enum Orientation {
+    PORTRAIT = 'Portrait',
+    LANDSCAPE = 'Landscape',
+}
+
+export const compositionOrientationMap: { [key in Compositions]: Orientation } = {
+    [Compositions.Portrait]: Orientation.PORTRAIT,
+    [Compositions.Landscape]: Orientation.LANDSCAPE,
+    [Compositions.DebatePortrait]: Orientation.PORTRAIT,
+    [Compositions.DebateLandscape]: Orientation.LANDSCAPE,
+};
 
 export enum ScriptStatus {
     NOT_READY = 'Not ready',
@@ -40,7 +58,7 @@ export type NotionMainDatabasePage = {
       type: 'multi_select';
       multi_select: Array<{
         id: string;
-        name: 'Portrait' | 'Landscape';
+        name: Compositions;
         color: string;
       }>;
     },
@@ -48,12 +66,17 @@ export type NotionMainDatabasePage = {
       id: string;
       type: 'files';
       files: Array<{ name: string, type: 'file' | 'file_upload' | 'external', file: { url: string, expiry_type: string }}>;
-    };
+    },
     Title: {
       id: string;
       type: 'rich_text';
       rich_text: Array<{ text: { content: string } }>;
-    }
+    },
+    Settings: {
+      id: string;
+      type: 'rich_text';
+      rich_text: Array<{ text: { content: string } }>;
+    },
   }
 }
 
@@ -68,17 +91,11 @@ export type VideoBackground = {
     seed?: string | number;
 };
 
-export type ScriptWithTitle = {
-    title: string;
-    segments: Script;
-} & {
-    id?: string;
-    audioMimeType?: string;
-    audioExtension?: string;
-    audioSrc?: string;
+export type AudioScript = {
+    src: string
+    mimeType?: string;
+    extension?: string;
     duration?: number;
-    compositions?: Array<'Portrait' | 'Landscape'>;
-    background?: VideoBackground;
     alignment?: Array<{
         start: number;
         end: number;
@@ -89,7 +106,19 @@ export type ScriptWithTitle = {
         end: number;
         viseme: string;
     }>;
+}
+
+export type ScriptWithTitle = {
+    title: string;
+    segments: Script;
+} & {
+    id?: string;
+    audio?: Array<AudioScript>;
+    compositions?: Array<Compositions>;
+    background?: VideoBackground;
     seo?: string;
+    settings?: any;
+    thumbnails?: Array<{ filename: string; src: string }>;
 }
 
 export type SEO = {
@@ -176,16 +205,21 @@ export const videoSchema = z.object({
       text: z.string(),
     })),
   })),
-  alignment: z.array(z.object({
-    start: z.number(),
-    end: z.number(),
-    text: z.string(),
+  audio: z.array(z.object({
+    src: z.string(),
+    mimeType: z.string().optional(),
+    extension: z.string().optional(),
+    duration: z.number().optional(),
+    alignment: z.array(z.object({
+      start: z.number(),
+      end: z.number(),
+      text: z.string(),
+    })).optional(),
+    visemes: z.array(z.object({
+      start: z.number(),
+      end: z.number(),
+      viseme: z.string(),
+    })).optional(),
   })),
-  visemes: z.array(z.object({
-    start: z.number(),
-    end: z.number(),
-    viseme: z.string(),
-  })).optional(),
-  duration: z.number(),
-  audioSrc: z.string(),
+  settings: z.any().optional(),
 });

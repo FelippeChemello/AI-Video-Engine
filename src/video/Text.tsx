@@ -1,4 +1,4 @@
-import React, { useRef, useState, useLayoutEffect, useCallback } from 'react';
+import React, { useRef, useState, useLayoutEffect, useCallback, useEffect } from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
 
 interface TextProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -34,6 +34,10 @@ const Text: React.FC<TextProps> = ({
       return;
     }
 
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      return;
+    }
+
     let currentFontSize = maxFontSize;
     text.style.fontSize = `${currentFontSize}px`;
 
@@ -50,6 +54,21 @@ const Text: React.FC<TextProps> = ({
   useLayoutEffect(() => {
     adjustFontSize();
   }, [alignedWords, adjustFontSize]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      adjustFontSize();
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [adjustFontSize]);
 
   return (
     <div
@@ -87,8 +106,7 @@ const Text: React.FC<TextProps> = ({
             dangerouslySetInnerHTML={{
               __html: `${word.text} &nbsp;`,
             }}
-          >
-          </span>
+          />
         ))}
       </span>
     </div>
