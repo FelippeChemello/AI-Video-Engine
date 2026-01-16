@@ -48,7 +48,7 @@ export async function generateIllustration(segment: ScriptWithTitle['segments'][
         case 'image_generation': 
         default: 
             console.log('Generating image');
-            const mediaGenerated = await openai.generate(segment.illustration.description);
+            const mediaGenerated = await openai.generate({ prompt: segment.illustration.description });
             
             mediaSrc = mediaGenerated.mediaSrc;
             break;

@@ -3,7 +3,7 @@ import path from 'path';
 import dayjs from 'dayjs';
 import { getVideoDurationInSeconds } from 'get-video-duration';
 
-import { compositionOrientationMap, Compositions, Orientation, ScriptStatus } from './config/types';
+import { Channels, compositionOrientationMap, Compositions, Orientation, ScriptStatus } from './config/types';
 import { outputDir, publicDir } from './config/path';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -154,27 +154,30 @@ for (const scriptIndex in scripts) {
 
         await defaultScriptManager.setSEO(script.id, seo);
 
-        console.log('Uploading videos...');
-        for (const video of videos) {
-            const thumbnail = script.thumbnails?.find(t => {
-                const thumbOrientation = compositionOrientationMap[video.composition];
-                return t.filename.includes(thumbOrientation);
-            })
+        if (script.channels?.includes(Channels.CODESTACK)) {
+            console.log('Uploading videos...');
+            
+            for (const video of videos) {
+                const thumbnail = script.thumbnails?.find(t => {
+                    const thumbOrientation = compositionOrientationMap[video.composition];
+                    return t.filename.includes(thumbOrientation);
+                })
 
-            const uploadResult = await youtube.uploadVideo(
-                video.videoPath,
-                seo.title,
-                `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
-                thumbnail ? path.join(outputDir, thumbnail.src) : undefined,
-                seo.tags,
-                dayjs().add(Number(scriptIndex), 'hours').toDate()
-            );
+                const uploadResult = await youtube.uploadVideo(
+                    video.videoPath,
+                    seo.title,
+                    `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
+                    thumbnail ? path.join(outputDir, thumbnail.src) : undefined,
+                    seo.tags,
+                    dayjs().add(Number(scriptIndex), 'hours').toDate()
+                );
 
-            console.log(`Video uploaded: ${uploadResult.url}`);
+                console.log(`Video uploaded: ${uploadResult.url}`);
+            }
+
+            await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.PUBLISHED);
         }
-
-        await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.PUBLISHED);
-
+        
         console.log(`Cleaning up assets for script ${script.title}...`);
 
         for (const audio of script.audio) {
