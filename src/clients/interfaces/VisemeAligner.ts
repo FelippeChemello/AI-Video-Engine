@@ -3,6 +3,7 @@ import { AudioAlignerDTO, AudioToVisemeResponse, Compositions } from "../../conf
 export const compositionShouldAlignVisemes: Record<Compositions, boolean> = {
   DebateLandscape: false,
   DebatePortrait: false,
+  TinderRoastPortrait: false,
   Landscape: true,
   Portrait: true,
 };  

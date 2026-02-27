@@ -26,6 +26,9 @@ importers:
       '@notionhq/client':
         specifier: ^3.1.1
         version: 3.1.1
+      '@remotion/animation-utils':
+        specifier: ^4.0.394
+        version: 4.0.394(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@remotion/bundler':
         specifier: 4.0.373
         version: 4.0.373(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -62,6 +65,9 @@ importers:
       cli-progress:
         specifier: ^3.12.0
         version: 3.12.0
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
@@ -80,6 +86,9 @@ importers:
       googleapis:
         specifier: ^165.0.0
         version: 165.0.0
+      lucide-react:
+        specifier: ^0.562.0
+        version: 0.562.0(react@19.1.0)
       matter-js:
         specifier: ^0.20.0
         version: 0.20.0
@@ -116,6 +125,9 @@ importers:
       split-file:
         specifier: ^2.3.0
         version: 2.3.0
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
       tailwindcss:
         specifier: ^4.1.7
         version: 4.1.7
@@ -1205,6 +1217,12 @@ packages:
     resolution: {integrity: sha512-ua5U6V66gDcbLZe4P2QeyNgPp4YWD1ymGA6j3n+s8CGExtrCPe64v+g4mvpT8Bnb985R96e4zFT61+m0YCwqMg==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+
+  '@remotion/animation-utils@4.0.394':
+    resolution: {integrity: sha512-I0ciSl7uz7B3hRjCHbNlRmrhcSx91wcZr1ilN9CAi0PMDp14WLVT0NtKi0ZAQ4LeLHrljNbhX29J9tAQU10tzw==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   '@remotion/bundler@4.0.373':
     resolution: {integrity: sha512-VrMVfqa36HbJtaUbskNU5gUHCpQIywYqFjfhEmBsYPclJygJPVs2SYwj+VB2YqlGD5liTa2h5xFWPghD718jmA==}
@@ -3043,6 +3061,11 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
+  lucide-react@0.562.0:
+    resolution: {integrity: sha512-82hOAu7y0dbVuFfmO4bYF1XEwYk/mEbM5E+b1jgci/udUBEE/R7LF5Ip0CCEmXe8AybRM8L+04eP+LGZeDvkiw==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   marked@16.2.0:
     resolution: {integrity: sha512-LbbTuye+0dWRz2TS9KJ7wsnD4KAtpj0MVkWc90XvBa6AslXsT0hTBVH5k32pcSyHH1fst9XEFJunXHktVy0zlg==}
     engines: {node: '>= 20'}
@@ -3723,6 +3746,12 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  remotion@4.0.394:
+    resolution: {integrity: sha512-NO/73AVb8W7t0i2SXnvXVxU+d9ev2Dn14j2OQLt0dCu5qJopXIL38Cg1yUDrTneutEvLq+EkqjUhLf/qQYtEAg==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
@@ -3957,8 +3986,8 @@ packages:
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
 
-  tailwind-merge@3.3.1:
-    resolution: {integrity: sha512-gBXpgUm/3rp1lMZZrM/w7D8GKqshif0zAymAhbCyIt8KMe+0v9DQ7cdYLR4FHH/cKpdTXb+A/tKKU3eolfsI+g==}
+  tailwind-merge@3.4.0:
+    resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
 
   tailwindcss@3.4.17:
     resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
@@ -5164,6 +5193,12 @@ snapshots:
     dependencies:
       react: 19.1.0
 
+  '@remotion/animation-utils@4.0.394(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      remotion: 4.0.394(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+
   '@remotion/bundler@4.0.373(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@remotion/media-parser': 4.0.373
@@ -5882,7 +5917,7 @@ snapshots:
       ramda: 0.28.0
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      tailwind-merge: 3.3.1
+      tailwind-merge: 3.4.0
       tailwindcss: 3.4.17
     transitivePeerDependencies:
       - '@babel/core'
@@ -7251,6 +7286,10 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
+  lucide-react@0.562.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+
   marked@16.2.0: {}
 
   marked@4.3.0: {}
@@ -8008,6 +8047,11 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
+  remotion@4.0.394(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+
   require-directory@2.1.1: {}
 
   require-from-string@2.0.2: {}
@@ -8281,7 +8325,7 @@ snapshots:
 
   tabbable@6.2.0: {}
 
-  tailwind-merge@3.3.1: {}
+  tailwind-merge@3.4.0: {}
 
   tailwindcss@3.4.17:
     dependencies:

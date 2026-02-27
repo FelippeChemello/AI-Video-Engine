@@ -9,7 +9,7 @@ import { outputDir, publicDir } from '../config/path';
 import { TTSClient, voices, Speaker } from './interfaces/TTS';
 import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
-import { ImageGeneratorClient, Config as ImageConfig } from './interfaces/ImageGenerator';
+import { ImageGeneratorClient, Config as ImageConfig, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 
@@ -70,12 +70,29 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { audioFileName }
     }
 
-    async generate(prompt: string, id?: string | number, config?: ImageConfig): Promise<{ mediaSrc?: string; }> {
+    async generate({
+        prompt,
+        baseImageSrc,
+        config,
+        id
+    }: GenerationParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating image with prompt: ${prompt}`);
-        
+
         const response = await openai.responses.create({
             model: 'gpt-4.1-mini',
-            input: prompt,
+            input: baseImageSrc 
+                ? [{ 
+                    role: 'user', 
+                    content: [
+                        { type: 'input_text', text: prompt }, 
+                        { 
+                            type: 'input_image', 
+                            image_url: `data:image/png;base64,${fs.readFileSync(baseImageSrc).toString('base64')}`, 
+                            detail: 'low' 
+                        }
+                    ] 
+                }] 
+                : prompt,
             tools: [{ 
                 type: 'image_generation', 
                 quality: 'medium', 
@@ -107,29 +124,39 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { mediaSrc }
     }
 
-    async generateThumbnail(
-        videoTitle: string, 
-        orientation: Orientation
-    ): Promise<{ mediaSrc?: string; }> {
+    async generateThumbnail({ 
+        videoTitle,
+        orientation,
+        customImage,
+        thumbnailTextLanguage = 'PORTUGUESE'
+    }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle}`);
         
-        const felippeFileId = ENV.OPENAI_FELIPPE_FILE_ID;
-
         const response = await openai.responses.create({
             model: 'gpt-4.1',
             input: [{
                 role: 'system',
-                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in PORTUGUESE. The thumbnail should include Felippe acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
+                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
             }, {
                 role: 'user',
-                content: [
+                content: customImage ? [ 
+                    {
+                        type: 'input_text',
+                        text: customImage.prompt
+                    },
+                    {
+                        type: 'input_image',
+                        image_url: `data:image/png;base64,${fs.readFileSync(customImage.src).toString('base64')}`,
+                        detail: 'low',
+                    }
+                ] : [
                     {
                         type: 'input_text',
                         text: `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
                     },
                     {
                         type: 'input_image',
-                        file_id: felippeFileId,
+                        file_id: ENV.OPENAI_FELIPPE_FILE_ID,
                         detail: 'low',
                     }
                 ]

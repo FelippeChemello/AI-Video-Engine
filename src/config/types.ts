@@ -10,6 +10,9 @@ export enum Compositions {
     // Debate
     DebatePortrait = 'DebatePortrait',
     DebateLandscape = 'DebateLandscape',
+
+    // Tinder Roast
+    TinderRoast = 'TinderRoastPortrait',
 }
 
 export enum Orientation {
@@ -17,11 +20,17 @@ export enum Orientation {
     LANDSCAPE = 'Landscape',
 }
 
+export enum Channels {
+    CODESTACK = 'CodeStack',
+    RED_FLAG_RADAR = 'RedFlagRadar',
+}
+
 export const compositionOrientationMap: { [key in Compositions]: Orientation } = {
     [Compositions.Portrait]: Orientation.PORTRAIT,
     [Compositions.Landscape]: Orientation.LANDSCAPE,
     [Compositions.DebatePortrait]: Orientation.PORTRAIT,
     [Compositions.DebateLandscape]: Orientation.LANDSCAPE,
+    [Compositions.TinderRoast]: Orientation.PORTRAIT,
 };
 
 export enum ScriptStatus {
@@ -77,6 +86,15 @@ export type NotionMainDatabasePage = {
       type: 'rich_text';
       rich_text: Array<{ text: { content: string } }>;
     },
+    Channel: {
+      id: string;
+      type: 'multi_select';
+      multi_select: Array<{
+        id: string;
+        name: Channels;
+        color: string;
+      }>;
+    }
   }
 }
 
@@ -93,6 +111,37 @@ export type VideoBackground = {
     secondaryColor?: string;
     seed?: string | number;
 };
+
+export type TinderRoastScript = {
+    meta: {
+        video_title: string;
+        video_description: string;
+        video_hashtags: Array<string>;
+        archetype_used: string;
+    },
+    profile: {
+        name: string;
+        age: number; 
+        job: string;  
+        location: string;
+        main_photo_description: string; // Description of how the person looks like, this is the base for other photo descriptions - super detailed
+        photos: string[]; // Array of photo descriptions, each describing a photo on the profile, the main_photo_description will be used as a reference
+        bio: string;
+    },
+    script: { // Everything will be directly spoken in the video, take care to make it funny and savage without any text formatting
+        video_intro: string; // Intro to the video - This will be the opening lines spoken by the reviewer while the tinder profile is being loaded on screen
+        intro: string; // Introduction to the fictional profile
+        photo_roasts: Array<string>; // Array of roasts for each photo in same order as the photos array
+        bio_roast: Array<{
+            target: string; // The specific part of the bio being roasted - Exactly as it appears in the bio
+            narration: string; // The roast narration for that specific part of the bio
+        }>
+        decision: {
+            verdict: string; // The final verdict on the profile
+            swipe_direction: 'left' | 'right'; // Whether to swipe left or right
+        }
+    }
+}
 
 export type BasicScript = {
     id: string;
@@ -130,6 +179,7 @@ export type ScriptWithTitle = {
     seo?: string;
     settings?: any;
     thumbnails?: Array<{ filename: string; src: string }>;
+    channels?: Array<Channels>;
 }
 
 export type SEO = {

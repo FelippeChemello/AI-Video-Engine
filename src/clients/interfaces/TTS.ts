@@ -14,6 +14,8 @@ export enum Speaker {
     Grok = 'Grok',
     Claude = 'Claude',
     Gemini = 'Gemini',
+
+    Roaster = 'Roaster',
 }
 
 enum VoiceProvider {
@@ -66,9 +68,15 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.VIBEVOICE]: 'Speaker 1',
         [VoiceProvider.GEMINI]: 'Aoede',
     },
+    Roaster: {
+        [VoiceProvider.ELEVENLABS]: 'k3zGUviRBlOalyiswEdo',
+        [VoiceProvider.OPENAI]: 'alloy - American, Mid-range vocal register with slight vocal fry. Cynical and unimpressed but witty and playful. Conversational and sarcastic, like texting a best friend. Fast-paced and snappy with strategic pauses before punchlines. Emphasis on key words for comedic impact. Natural speaking voice, never announcer-y or performed.',
+        [VoiceProvider.VIBEVOICE]: 'Speaker 1',
+        [VoiceProvider.GEMINI]: 'Umbriel',
+    }, 
 }
 
 export interface TTSClient {
-    synthesize(voice: Speaker, text: string, id?: string | number): Promise<SynthesizedAudio>;
+    synthesize(voice: Speaker, text: string, id?: string | number, customPrompt?: string): Promise<SynthesizedAudio>;
     synthesizeScript(script: Script, id?: string | number): Promise<SynthesizedAudio>;
 }

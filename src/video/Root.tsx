@@ -1,15 +1,15 @@
 import "./index.css";
 
 import { Composition, random, staticFile } from "remotion";
+import { v4 } from "uuid";
+import { z } from "zod";
 
 import { Landscape } from "./Landscape";
 import { videoSchema } from "../config/types";
 import { Portrait } from "./Portrait";
-import { FallingBalls, fallingBallsSchema } from "./FallingBalls";
-import { v4 } from "uuid";
-import { z } from "zod";
 import { DebatePortrait } from "./DebatePortrait";
 import { DebateLandscape } from "./DebateLandscape";
+import { Tinder } from "./Tinder";
 
 const FPS = 30;
 
@@ -21,9 +21,6 @@ const defaultProps: z.infer<typeof videoSchema> = {
     mainColor: "oklch(68.5% 0.169 237.323)",
     secondaryColor: "oklch(29.3% 0.066 243.157)",
     seed: v4(),
-    video: {
-      src: "assets/parkour.mp4",
-    }
   }
 };
 
@@ -46,23 +43,38 @@ async function calculateMetadata({ props }: { props: z.infer<typeof videoSchema>
   }
 
   let pos = 0;
-  const segments = props.segments.map((segment, segmentIndex) => {
-    const tokens = segment.text.replace(/<\/?[^>]+(>|$)/g, "").trim().split(/\s+/);
-    
-    const duration = props.audio[segmentIndex]?.duration ?? 0
-    const segmentAlignment = props.audio[segmentIndex]?.alignment ?? []
+  const segments = props.audio.length > 1 
+    ? props.segments.map((segment, segmentIndex) => {
+      const tokens = segment.text.replace(/<\/?[^>]+(>|$)/g, "").trim().split(/\s+/);
+      
+      const duration = props.audio[segmentIndex]?.duration ?? 0
+      const segmentAlignment = props.audio[segmentIndex]?.alignment ?? []
 
-    pos += tokens.length;
+      pos += tokens.length;
 
-    return {
-      ...segment,
-      duration: duration,
-      alignment: segmentAlignment,
-    }
-  })
+      return {
+        ...segment,
+        duration: duration,
+        alignment: segmentAlignment,
+      }
+    })
+    : props.segments.map((segment) => {
+      const tokens = segment.text.replace(/<\/?[^>]+(>|$)/g, "").trim().split(/\s+/);
+      
+      const duration = (props.audio[0].alignment?.[pos + tokens.length - 1]?.end || 0) - (props.audio[0].alignment?.[pos]?.start || 0)
+      const segmentAlignment = props.audio[0]?.alignment?.slice(pos, pos + tokens.length) || []
+
+      pos += tokens.length;
+
+      return {
+        ...segment,
+        duration: duration,
+        alignment: segmentAlignment,
+      }
+    })
 
   return {
-    durationInFrames: Math.ceil(duration * FPS),
+    durationInFrames: Math.max(1, Math.ceil(duration * FPS)),
     props: {
       ...props,
       segments
@@ -118,19 +130,15 @@ export const RemotionRoot: React.FC = () => {
         calculateMetadata={calculateMetadata}
       />
       <Composition
-        id="FallingBalls"
-        component={FallingBalls}
-        durationInFrames={3000}
+        id="TinderRoastPortrait"
+        component={Tinder}
+        durationInFrames={1}
         fps={FPS}
-        width={1920}
-        height={1080}
-        schema={fallingBallsSchema}
-        defaultProps={{
-          backgroundColor: "oklch(21% 0.006 285.885)",
-          obstacleColor: "oklch(70.8% 0 0)",
-          ballColor: "oklch(68.5% 0.169 237.323)",
-          seed: v4(),
-        }}
+        width={1080}
+        height={1920}
+        schema={videoSchema}
+        defaultProps={defaultProps}
+        calculateMetadata={calculateMetadata}
       />
     </>
   );

@@ -13,10 +13,10 @@ const gemini: TTSClient = new GeminiClient();
 const vibevoice: TTSClient = new VibeVoiceClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
-export async function synthesizeSpeech(segments: ScriptWithTitle['segments'], maxDurationInSeconds?: number): Promise<{ audioFileName: string, duration?: number }> {
+export async function synthesizeSpeech(segments: ScriptWithTitle['segments'], maxDurationInSeconds?: number, client: TTSClient = vibevoice): Promise<{ audioFileName: string, duration?: number }> {
     let audio: { audioFileName: string, duration?: number };
     try {
-       audio = await vibevoice.synthesizeScript(segments, 'full-script')
+       audio = await client.synthesizeScript(segments, 'full-script')
     } catch {
         console.log("VibeVoice synthesis failed, trying Gemini TTS...");
         audio = await gemini.synthesizeScript(segments, 'full-script');

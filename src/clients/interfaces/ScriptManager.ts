@@ -1,4 +1,4 @@
-import { BasicScript, Compositions, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../../config/types";
+import { BasicScript, Channels, Compositions, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../../config/types";
 
 export type SaveScriptParams = {
     script: ScriptWithTitle;
@@ -7,6 +7,7 @@ export type SaveScriptParams = {
     formats?: Array<Compositions>;
     scriptSrc?: string;
     settings?: any;
+    channels?: Array<Channels>
 };
 
 export interface ScriptManagerClient {
