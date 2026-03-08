@@ -8,13 +8,18 @@ AI Vídeo Engine is a Node.js toolkit that orchestrates multiple LLMs, text-to-s
 
 ## Table of Contents
 
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Environment variables](#environment-variables)
-- [Pre-requisites](#pre-requisites)
-- [Available scripts](#available-scripts)
-- [Usage examples](#usage-examples)
-- [Contributing](#contributing)
+- [AI Vídeo Engine](#ai-vídeo-engine)
+  - [Table of Contents](#table-of-contents)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Environment variables](#environment-variables)
+  - [Pre-requisites](#pre-requisites)
+  - [Available scripts](#available-scripts)
+    - [Content Generation](#content-generation)
+    - [Video Production](#video-production)
+    - [Utilities](#utilities)
+  - [Usage examples](#usage-examples)
+  - [Contributing](#contributing)
 
 ## Requirements
 
@@ -35,10 +40,10 @@ pnpm install
 
 Create a `.env` file at the project root. Required variables are validated in [`src/config/env.ts`](src/config/env.ts):
 
-- **AI Models:** `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
+- **AI Models:** `GEMINI_PAID_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
 - **Search & Email:** `GOOGLE_SERP_API_KEY`, `GOOGLE_SERP_ID`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`
 - **Audio Services:** `MFA_BASE_URL`, `MFA_API_KEY`, `AENEAS_BASE_URL`, `AENEAS_API_KEY`, `ELEVENLABS_API_KEY`
-- **Script Management:** `NOTION_TOKEN`, `NOTION_DEFAULT_DATABASE_ID`, `NOTION_NEWS_DATABASE_ID`
+- **Script Management:** `NOTION_TOKEN`, `NOTION_DEFAULT_DATABASE_ID`
 
 ## Pre-requisites
 

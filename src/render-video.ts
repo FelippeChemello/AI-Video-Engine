@@ -27,7 +27,6 @@ const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
 
 const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
-const newsScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_NEWS_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
 const visemeAligner: VisemeAlignerClient = new MFAClient();
 const openai: LLMClient = new OpenAIClient();
@@ -35,10 +34,8 @@ const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
 const youtube: VideoUploaderClient = new Youtube();
 
-const defaultScripts = await defaultScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
-const newsScripts = await newsScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
+const scripts = await defaultScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
 
-const scripts = [...defaultScripts, ...newsScripts];
 if (scripts.length === 0) {
     console.log('No scripts to process.');
     process.exit(0);
@@ -149,8 +146,7 @@ for (const scriptIndex in scripts) {
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.DONE);
 
         console.log("Generating SEO content...");
-        const { text: seoText } = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
-        const seo = JSON.parse(seoText);
+        const seo = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
 
         await defaultScriptManager.setSEO(script.id, seo);
 

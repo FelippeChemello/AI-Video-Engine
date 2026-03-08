@@ -6,7 +6,6 @@ config({ path: '.env', override: true });
 const envSchema = z.object({
     NODE_ENV: z.string().default('development'),
     
-    GEMINI_API_KEY: z.string(),
     GEMINI_PAID_API_KEY: z.string(),
     GOOGLE_SERP_API_KEY: z.string(),
     GOOGLE_SERP_ID: z.string(),
@@ -33,7 +32,6 @@ const envSchema = z.object({
     
     NOTION_TOKEN: z.string(),
     NOTION_DEFAULT_DATABASE_ID: z.string(),
-    NOTION_NEWS_DATABASE_ID: z.string().optional(),
 
     ELEVENLABS_API_KEY: z.string(),
 });

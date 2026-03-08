@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { publicDir } from './config/path';
-import { Compositions, ScriptWithTitle } from './config/types';
+import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
@@ -19,7 +19,7 @@ import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
 import { generateIllustration } from './services/generate-illustration';
 import { cleanupFiles } from './services/cleanup-files';
 
-const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_NEWS_DATABASE_ID);
+const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
 const gmail: NewsletterFetcher = new GmailClient();
@@ -32,17 +32,12 @@ const newsletter: { title: string; content: string } = newsletterFile
     : await gmail.fetchContent(NewsletterSource.FILIPE_DESCHAMPS);
 
 console.log(`Writing script based on newsletter ${newsletter.title}...`);
-const { text: scriptText } = await openai.complete(Agent.NEWSLETTER_WRITER, `${newsletter.title}\n\n${newsletter.content}`); 
+const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `${newsletter.title}\n\n${newsletter.content}`); 
 
 console.log("Reviewing script...");
-const { text: review } = await anthropic.complete(Agent.NEWSLETTER_REVIEWER, scriptText)
+const review = await anthropic.complete(Agent.NEWSLETTER_REVIEWER, scriptText.scripts)
 
-let scripts: ScriptWithTitle | ScriptWithTitle[] = []
-try {
-    scripts = JSON.parse(review)
-} catch (error) {
-    scripts = JSON.parse(scriptText)
-}
+const scripts: ScriptWithTitle | ScriptWithTitle[] = review.scripts as ScriptWithTitle | ScriptWithTitle[];
 
 for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
     console.log(`Processing script: ${script.title}`);
@@ -62,7 +57,8 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
     await scriptManagerClient.saveScript({
         script, 
         formats: ENABLED_FORMATS, 
-        scriptSrc: path.basename(scriptTextFile)
+        scriptSrc: path.basename(scriptTextFile),
+        channels: [Channels.CODESTACK]
     });
 
     cleanupFiles([

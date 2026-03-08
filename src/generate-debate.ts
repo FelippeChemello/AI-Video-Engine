@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-import { outputDir } from './config/path';
-import { AudioScript, Compositions, Script, ScriptWithTitle } from './config/types';
+import { outputDir, publicDir } from './config/path';
+import { AudioScript, Channels, Compositions, Script, ScriptWithTitle } from './config/types';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
@@ -12,6 +12,8 @@ import { Speaker, SynthesizedAudio, TTSClient } from './clients/interfaces/TTS';
 import { GrokClient } from './clients/grok';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
+import { cleanupFiles } from './services/cleanup-files';
+import { generateThumbnails } from './services/generate-thumbnails';
 
 const openai: LLMClient & ImageGeneratorClient & TTSClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
@@ -45,11 +47,15 @@ for (const topicIndex in topics) {
         { position: grokOpinion },
         { mediaSrc: illustration }
     ] = await Promise.all([
-        openai.complete(Agent.DEBATE, `Tópico: ${topic}`).then(res => JSON.parse(res.text)).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
-        anthropic.complete(Agent.DEBATE, `Tópico: ${topic}`).then(res => JSON.parse(res.text)).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
-        gemini.complete(Agent.DEBATE, `Tópico: ${topic}`).then(res => JSON.parse(res.text)).catch(() => ({ position: "O modelo da Gemini recusou-se a responder." })),
-        grok.complete(Agent.DEBATE, `Tópico: ${topic}`).then(res => JSON.parse(res.text)).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
-        openai.generate(`Uma ilustração detalhada que represente um debate sobre o tópico: "${topic}" - A imagem não deve conter background`, `${topicIndex}-illustration`, { background: 'transparent' }),
+        openai.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
+        anthropic.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
+        gemini.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Gemini recusou-se a responder." })),
+        grok.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
+        openai.generate({
+          prompt: `Uma ilustração detalhada que represente um debate sobre o tópico: "${topic}" - A imagem não deve conter background`,
+          id: `${topicIndex}-illustration`,
+          config: { background: 'transparent' }
+        }),
     ]);
 
     positions.push({
@@ -62,7 +68,7 @@ for (const topicIndex in topics) {
     });
 }
 
-const council = await anthropic.complete(Agent.DEBATE_COUNCIL, positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n')).then(res => JSON.parse(res.text));
+const council = await anthropic.complete(Agent.DEBATE_COUNCIL, positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n'))
 
 const topicsScripted: Script[] = positions.map(p => ([
     { speaker: Speaker.Narrator, text: `[Narrator] ${p.topic}`, mediaSrc: p.illustration },
@@ -90,7 +96,8 @@ const scriptPortrait: ScriptWithTitle[] = topicsScripted.map((topicScript, index
 
 const scripts: ScriptWithTitle[] = [...scriptPortrait, scriptLandscape];
 
-fs.writeFileSync(path.join(outputDir, 'script-debate.json'), JSON.stringify(scripts, null, 2));
+const scriptsFilePath = path.join(outputDir, 'script-debate.json');
+fs.writeFileSync(scriptsFilePath, JSON.stringify(scripts, null, 2));
 
 for (const script of scripts) {
     console.log(`Saving script: ${script.title}`);
@@ -110,6 +117,8 @@ for (const script of scripts) {
 
     script.audio = audios;
 
+    const thumbnails = await generateThumbnails(script.title, script.compositions!)
+
     const settings = script.compositions?.includes(Compositions.DebateLandscape)
         ? { winner: council.winner }
         : undefined
@@ -117,6 +126,15 @@ for (const script of scripts) {
     await scriptManagerClient.saveScript({
         script,
         formats: script.compositions,
-        settings
+        settings,
+        channels: [Channels.CODESTACK],
+        thumbnailsSrc: thumbnails
     });
+
+    cleanupFiles([
+        ...script.segments.map(s => s.mediaSrc).filter(Boolean).map(m => path.join(publicDir, m!)),
+        ...audios.map(a => path.join(publicDir, a.src)),
+        ...thumbnails.map(t => path.join(outputDir, t)),
+        scriptsFilePath
+    ])
 }

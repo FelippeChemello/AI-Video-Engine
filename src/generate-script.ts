@@ -1,7 +1,7 @@
 import path from 'path';
 
 import { publicDir } from './config/path';
-import { Compositions, ScriptWithTitle } from './config/types';
+import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
@@ -31,7 +31,7 @@ if (!topic) {
 }
 
 console.log(`Starting research on topic: ${topic}`);
-const { text: research } = await gemini.complete(Agent.RESEARCHER, `Tópico: ${topic}`);
+const research = await gemini.complete(Agent.RESEARCHER, `Tópico: ${topic}`);
 
 console.log("--------------------------")
 console.log("Research:")
@@ -39,11 +39,11 @@ console.log(research)
 console.log("--------------------------")
 
 console.log("Writing script based on research...");
-const { text: scriptText } = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research}`);
+const scriptText = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}`);
 
 console.log("Reviewing script...");
-const { text: review } = await anthropic.complete(Agent.SCRIPT_REVIEWER, scriptText)
-const scripts = JSON.parse(review) as ScriptWithTitle | ScriptWithTitle[];
+const review = await anthropic.complete(Agent.SCRIPT_REVIEWER, scriptText.scripts)
+const scripts = review.scripts as ScriptWithTitle | ScriptWithTitle[];
 
 for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
@@ -64,6 +64,7 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
         script,
         thumbnailsSrc: thumbnails,
         formats: ENABLED_FORMATS,
+        channels: [Channels.CODESTACK]
     })
 
     cleanupFiles([

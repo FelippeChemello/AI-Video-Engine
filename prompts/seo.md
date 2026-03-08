@@ -27,7 +27,7 @@ Gere sua resposta em um formato de JSON válido, com os campos "title", "descrip
 
 ```typescript
 type SEOResponse = {
-  title: string;
+  title: string; // Very short and catchy title, ideally between 50-60 characters, that summarizes the video content and includes relevant keywords for SEO.
   description: string; // Descrição em texto plano, sem formatação, curta e direta.
   tags: string[];
   hashtags: string[]; // Exemplo: ["#techtok", "#docker", "#vm", ...] - Máximo de 7 hashtags.

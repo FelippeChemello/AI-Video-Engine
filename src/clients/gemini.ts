@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 import fs, { writeFileSync } from 'fs'
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import path from 'path';
 import mime from 'mime';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { GenerationParams, ImageGeneratorClient, ThumbnailParams } from './interfaces/ImageGenerator';
 import { ENV } from '../config/env';
@@ -11,12 +12,11 @@ import { v4 } from 'uuid';
 import { Speaker, TTSClient, voices } from './interfaces/TTS';
 import { Script } from '../config/types';
 import { getAudioDurationInSeconds } from 'get-audio-duration';
-import { Agent, Agents, LLMClient } from './interfaces/LLM';
+import { Agent, AgentOutput, Agents, LLMClient } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { convertToWav } from '../utils/save-wav-file';
 import { sleep } from '../utils/sleep';
 
-const genAI = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY })
 const genAIPro = new GoogleGenAI({ apiKey: ENV.GEMINI_PAID_API_KEY })
 
 export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient {
@@ -179,12 +179,9 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         try {
             console.log(`[GEMINI] Generating image with prompt: ${prompt}`);
 
-            const imageResult = await genAI.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: [
-                    { text: `Generate an image for the following prompt: ${prompt}` },
-                    ...(baseImageSrc ? [{ text: 'Use the following image as a base for the generation.', inlineData: { mimeType: 'image/png', data: fs.readFileSync(baseImageSrc).toString('base64') } }] : [])
-                ],
+            const imageResult = await genAIPro.models.generateContent({
+                model: 'gemini-3.1-flash-image-preview',
+                contents: `Generate an image for the following prompt: ${prompt}`,
                 config: { 
                     responseModalities: ['text', 'image'],
                     imageConfig: { aspectRatio: '4:3' },
@@ -240,8 +237,8 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
         const img = fs.readFileSync(customImage ? customImage.src : path.resolve(publicDir, 'assets', 'felippe.png')).toString('base64')
 
-        const imageResult = await genAI.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+        const imageResult = await genAIPro.models.generateContent({
+            model: 'gemini-3.1-flash-image-preview',
             contents: [
                 { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.` },
                 { text: `Video Title: ${videoTitle}` },
@@ -251,8 +248,12 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                 { inlineData: { mimeType: 'image/png', data: img } }
             ],
             config: { 
+                thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
                 responseModalities: ['text', 'image'],
-                imageConfig: { aspectRatio: '4:3' },
+                imageConfig: { 
+                    aspectRatio: orientation === 'Portrait' ? '9:16' : '16:9', 
+                    imageSize: "1K"
+                },
             }
         })
 
@@ -289,7 +290,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         return { mediaSrc }
     }
 
-    async complete(agent: Agent, prompt: string): Promise<{ text: string }> {
+    async complete<T extends Agent>(agent: T, prompt: string | unknown): Promise<AgentOutput<T>> {
         console.log(`[GEMINI] Running agent: ${agent}`);
 
         const maxRetries = 10;
@@ -297,18 +298,27 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
         while (retries < maxRetries) {
             try {
-                const response = await genAI.models.generateContent({
-                    model: Agents[agent].model.gemini,
-                    contents: prompt,
+                const config = Agents[agent]
+
+                const jsonSchema = zodToJsonSchema(config.outputStructure as any)
+                if (jsonSchema.$schema) {
+                    delete jsonSchema.$schema
+                }
+
+                const response = await genAIPro.models.generateContent({
+                    model: config.model.gemini,
+                    contents: typeof prompt === 'string' ? prompt : JSON.stringify(prompt),
                     config: {
-                        systemInstruction: Agents[agent].systemPrompt,
+                        systemInstruction: config.systemPrompt,
                         responseModalities: ['text'],
-                        maxOutputTokens: 65536,
+                        maxOutputTokens: 64000,
                         temperature: 0.7,
                         tools: [{ googleSearch: {} }, { urlContext: {} }],
                         thinkingConfig: {
-                            thinkingBudget: 4096,
-                        }    
+                            thinkingLevel: ThinkingLevel.MEDIUM,
+                        },
+                        responseMimeType: 'application/json',
+                        responseSchema: jsonSchema
                     }
                 });
 
@@ -317,9 +327,12 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                     throw new Error('No text response from Gemini');
                 }
 
-                const parsedResponse = Agents[agent].responseParser(text);
-
-                return { text: parsedResponse };
+                try {
+                    const parsedOutput = JSON.parse(text);
+                    return config.outputStructure.parse(parsedOutput) as AgentOutput<T>;
+                } catch (parseError) {
+                    throw new Error(`Failed to parse Gemini response: ${parseError}. Response text: ${text}`);
+                }
             } catch (error: any) {
                 retries++;
                 console.log(`[GEMINI] Error during completion: ${error}. Retry ${retries}/${maxRetries}`);
@@ -329,7 +342,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                 }
                 
                 await sleep(30000);
-        }
+            }
         }
 
         throw new Error(`[GEMINI] Failed to complete after ${maxRetries} retries`);

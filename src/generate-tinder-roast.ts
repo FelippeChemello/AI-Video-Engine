@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { Channels, Compositions, Orientation, ScriptWithTitle, TinderRoastScript } from './config/types';
+import { Channels, Compositions, Orientation, ScriptWithTitle } from './config/types';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
@@ -26,8 +26,7 @@ if (!archetype) {
 
 console.log(`\n\nStarting generation for archetype: ${archetype}`);
 
-const { text: roastScripted } = await grok.complete(Agent.TINDER_ROAST, `Generate a funny Tinder roast for the archetype: ${archetype}. Keep it funny and witty.`);
-const roastScript: TinderRoastScript = JSON.parse(roastScripted);
+const roastScript = await grok.complete(Agent.TINDER_ROAST, `Generate a funny Tinder roast for the archetype: ${archetype}. Keep it funny and witty.`);
 
 console.log(JSON.stringify(roastScript, null, 2));
 

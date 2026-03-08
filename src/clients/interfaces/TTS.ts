@@ -28,13 +28,13 @@ enum VoiceProvider {
 export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: string } } = {
     Cody: {
         [VoiceProvider.ELEVENLABS]: 'PoHUWWWMHFrA8z7Q88pu',
-        [VoiceProvider.OPENAI]: 'coral - Brazilian, Bright, energetic, neutral accent with playful tones and friendly curiosity. Inquisitive and slightly excitable, genuinely amazed and eager to learn about new things. Very Quick Pace, spontaneous questions with natural enthusiasm, balanced by moments of thoughtful curiosity.', 
+        [VoiceProvider.OPENAI]: 'coral - Male, Brazilian, Bright, energetic, neutral accent with playful tones and friendly curiosity. Inquisitive and slightly excitable, genuinely amazed and eager to learn about new things. Very Quick Pace, spontaneous questions with natural enthusiasm, balanced by moments of thoughtful curiosity.', 
         [VoiceProvider.VIBEVOICE]: 'Speaker 0',
         [VoiceProvider.GEMINI]: 'Puck',
     },
     Felippe: {
         [VoiceProvider.ELEVENLABS]: '7u8qsX4HQsSHJ0f8xsQZ',
-        [VoiceProvider.OPENAI]: 'ash - Brazilian, Bright, energetic, young, neutral accent, sophisticated, with clear articulation. Slightly professorial, speaking with pride and confidence in his vast knowledge, yet always approachable. Clearly articulate Portuguese and technical terms authentically. Very Fast Paced.',
+        [VoiceProvider.OPENAI]: 'ash - Male, Brazilian, Bright, energetic, young, neutral accent, sophisticated, with clear articulation. Slightly professorial, speaking with pride and confidence in his vast knowledge, yet always approachable. Clearly articulate Portuguese and technical terms authentically. Very Fast Paced.',
         [VoiceProvider.VIBEVOICE]: 'Speaker 1',
         [VoiceProvider.GEMINI]: 'Achird',
     },

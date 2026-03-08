@@ -7,11 +7,12 @@ import { v4 } from 'uuid';
 import { ENV } from '../config/env';
 import { outputDir, publicDir } from '../config/path';
 import { TTSClient, voices, Speaker } from './interfaces/TTS';
-import { Orientation, Script } from '../config/types';
+import { Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
-import { ImageGeneratorClient, Config as ImageConfig, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
-import { Agents, LLMClient, Agent } from './interfaces/LLM';
+import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
+import { Agents, LLMClient, Agent, AgentOutput } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
+import { zodTextFormat } from 'openai/helpers/zod.mjs';
 
 const openai = new OpenAI({
     apiKey: ENV.OPENAI_API_KEY,
@@ -181,18 +182,29 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { mediaSrc }
     }
 
-    async complete(agent: Agent, prompt: string): Promise<{ text: string }> {
+    async complete<T extends Agent>(agent: T, prompt: string | unknown): Promise<AgentOutput<T>> {
         console.log(`[OPENAI] Running agent: ${agent}`);
         
-        const response = await openai.responses.create({
-            model: Agents[agent].model.openai,
-            instructions: Agents[agent].systemPrompt,
-            input: prompt,
-        });
+        const config = Agents[agent]
 
-        const text = response.output_text
-        const parsedResponse = Agents[agent].responseParser(text);
+        const response = await openai.responses.parse({
+            model: config.model.openai,
+            instructions: config.systemPrompt,
+            input: [{
+                role: 'user',
+                content: typeof prompt === 'string' ? prompt : JSON.stringify(prompt),
+            }],
+            text: {
+                format: zodTextFormat(config.outputStructure, 'output_parsed'),
+            }
+        })
 
-        return { text: parsedResponse };
+        const parsedOutput = response.output_parsed
+
+        if (!parsedOutput) {
+            throw new Error(`[OPENAI] Failed to parse response for agent ${agent} `);
+        }
+
+        return parsedOutput as AgentOutput<T>;
     }
 }
