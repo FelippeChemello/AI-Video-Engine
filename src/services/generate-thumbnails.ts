@@ -1,8 +1,8 @@
-import { GeminiClient } from "../clients/gemini";
 import { ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
+import { OpenAIClient } from "../clients/openai";
 import { compositionOrientationMap, Compositions } from "../config/types";
 
-const gemini: ImageGeneratorClient = new GeminiClient();
+const openai: ImageGeneratorClient = new OpenAIClient();
 
 export async function generateThumbnails(title: string, compositions: Array<Compositions>): Promise<Array<string>> {
     const thumbnails = await Promise.all(
@@ -10,7 +10,7 @@ export async function generateThumbnails(title: string, compositions: Array<Comp
             const format = compositionOrientationMap[comp];
 
             console.log(`Generating ${format} thumbnail...`);
-            const { mediaSrc: thumbnailSrc } = await gemini.generateThumbnail({
+            const { mediaSrc: thumbnailSrc } = await openai.generateThumbnail({
                 orientation: format,
                 videoTitle: title,
             })

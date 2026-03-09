@@ -39,6 +39,11 @@ export class NotionClient implements ScriptManagerClient {
             for (const audioSrc of script.audio.map(a => a.src)) {
                 console.log(`[NOTION] Uploading audio: ${audioSrc}`);
                 const fileId = await this.uploadFile(path.join(publicDir, audioSrc));
+                if (!fileId) {
+                    console.error(`[NOTION] Failed to upload audio file: ${audioSrc}`);
+                    continue;
+                }
+
                 audioFileIds.push(fileId);
             }
         }
@@ -553,6 +558,11 @@ export class NotionClient implements ScriptManagerClient {
             console.log(`[NOTION] Saving output file: ${file}`);
 
             const fileId = await this.uploadFile(file);
+            if (!fileId) {
+                console.error(`[NOTION] Failed to upload output file: ${file}`);
+                continue;
+            }
+
             files.push({
                 type: 'file_upload',
                 file_upload: {
@@ -576,97 +586,103 @@ export class NotionClient implements ScriptManagerClient {
         });
     }
 
-    private async uploadFile(filePath: string): Promise<string> {
-        const { extension, mimeType } = getMimetypeFromFilename(filePath);
-        const filename = filePath.split('/').pop() || `file.${extension}`;
-        const fileSize = fs.statSync(filePath).size;
+    private async uploadFile(filePath: string): Promise<string | null> {
+        try {
+            const { extension, mimeType } = getMimetypeFromFilename(filePath)
+            const filename = filePath.split('/').pop() || `file.${extension}`;
+            const fileSize = fs.statSync(filePath).size;
 
-        console.log(`[NOTION] Uploading file: ${filePath} (MIME type: ${mimeType}, size: ${fileSize} bytes)`);
+            console.log(`[NOTION] Uploading file: ${filePath} (MIME type: ${mimeType}, size: ${fileSize} bytes)`);
 
-        if (fileSize > MAX_FILE_SIZE_SINGLE_PART) {
-            console.log(`[NOTION] File size exceeds maximum part size (${MAX_FILE_SIZE_SINGLE_PART} bytes). Splitting file...`);
+            if (fileSize > MAX_FILE_SIZE_SINGLE_PART) {
+                console.log(`[NOTION] File size exceeds maximum part size (${MAX_FILE_SIZE_SINGLE_PART} bytes). Splitting file...`);
 
-            const parts = await splitFile.splitFileBySize(filePath, MAX_FILE_SIZE_PART, outputDir);
-            const mimeType = getMimetypeFromFilename(filePath).mimeType;
+                const parts = await splitFile.splitFileBySize(filePath, MAX_FILE_SIZE_PART, outputDir);
+                const mimeType = getMimetypeFromFilename(filePath).mimeType;
 
-            console.log(`[NOTION] File split into ${parts.length} parts`);
+                console.log(`[NOTION] File split into ${parts.length} parts`);
 
-            const fileUpload = await client.fileUploads.create({ 
-                mode: 'multi_part', 
-                content_type: mimeType, 
-                filename, 
-                number_of_parts: parts.length
-            });
+                const fileUpload = await client.fileUploads.create({ 
+                    mode: 'multi_part', 
+                    content_type: mimeType, 
+                    filename, 
+                    number_of_parts: parts.length
+                });
 
-            const progressBar = new SingleBar({
-                format: `[NOTION] Uploading parts | {bar} | {percentage}% | {value}/{total} | {eta}s`,
-                hideCursor: true,
-                clearOnComplete: false,
-                fps: 2,
-            });
+                const progressBar = new SingleBar({
+                    format: `[NOTION] Uploading parts | {bar} | {percentage}% | {value}/{total} | {eta}s`,
+                    hideCursor: true,
+                    clearOnComplete: false,
+                    fps: 2,
+                });
 
-            progressBar.start(parts.length, 1);
+                progressBar.start(parts.length, 1);
 
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                const partNumber = i + 1;
+                for (let i = 0; i < parts.length; i++) {
+                    const part = parts[i];
+                    const partNumber = i + 1;
 
-                let retryCount = 0;
-                while (retryCount < MAX_RETRIES_ON_FILE_UPLOAD) {
-                    try {
-                        await client.fileUploads.send({
-                            file_upload_id: fileUpload.id,
-                            part_number: partNumber.toString(),
-                            file: {
-                                data: new Blob([await fs.openAsBlob(part)], { type: mimeType }),
+                    let retryCount = 0;
+                    while (retryCount < MAX_RETRIES_ON_FILE_UPLOAD) {
+                        try {
+                            await client.fileUploads.send({
+                                file_upload_id: fileUpload.id,
+                                part_number: partNumber.toString(),
+                                file: {
+                                    data: new Blob([await fs.openAsBlob(part)], { type: mimeType }),
+                                }
+                            })
+
+                            progressBar.update(i + 1);
+                            break;
+                        } catch (error: any) {
+                            if (retryCount < MAX_RETRIES_ON_FILE_UPLOAD) {
+                                retryCount++;
+
+                                const waitTime = Math.pow(2, retryCount) * 1000;
+                                await sleep(waitTime);
+                            } else {
+                                throw new Error(`[NOTION] Failed to upload part ${partNumber} after ${MAX_RETRIES_ON_FILE_UPLOAD} retries: ${error.message}`);
                             }
-                        })
-
-                        progressBar.update(i + 1);
-                        break;
-                    } catch (error: any) {
-                        if (retryCount < MAX_RETRIES_ON_FILE_UPLOAD) {
-                            retryCount++;
-
-                            const waitTime = Math.pow(2, retryCount) * 1000;
-                            await sleep(waitTime);
-                        } else {
-                            throw new Error(`[NOTION] Failed to upload part ${partNumber} after ${MAX_RETRIES_ON_FILE_UPLOAD} retries: ${error.message}`);
                         }
                     }
                 }
+
+                parts.forEach(part => fs.unlinkSync(part)); 
+                progressBar.stop();
+
+                await client.fileUploads.complete({
+                    file_upload_id: fileUpload.id,
+                })
+
+                console.log(`[NOTION] File uploaded: ${fileUpload.id}`);
+
+                return fileUpload.id
+            } else {
+                const mimeType = getMimetypeFromFilename(filePath).mimeType;
+                const isText = mimeType.startsWith('text/');
+
+                const data = isText
+                    ? new Blob([fs.readFileSync(filePath, 'utf-8')], { type: mimeType })
+                    : new Blob([fs.readFileSync(filePath)], { type: mimeType });
+
+                const fileUpload = await client.fileUploads.create({ mode: 'single_part' });
+                const file = await client.fileUploads.send({
+                    file_upload_id: fileUpload.id,
+                    file: {
+                        filename: filePath.split('/').pop() || 'file',
+                        data,
+                    }
+                })
+
+                console.log(`[NOTION] File uploaded: ${file.id}`);
+
+                return file.id;
             }
-
-            parts.forEach(part => fs.unlinkSync(part)); 
-            progressBar.stop();
-
-            await client.fileUploads.complete({
-                file_upload_id: fileUpload.id,
-            })
-
-            console.log(`[NOTION] File uploaded: ${fileUpload.id}`);
-
-            return fileUpload.id
-        } else {
-            const mimeType = getMimetypeFromFilename(filePath).mimeType;
-            const isText = mimeType.startsWith('text/');
-
-            const data = isText
-                ? new Blob([fs.readFileSync(filePath, 'utf-8')], { type: mimeType })
-                : new Blob([fs.readFileSync(filePath)], { type: mimeType });
-
-            const fileUpload = await client.fileUploads.create({ mode: 'single_part' });
-            const file = await client.fileUploads.send({
-                file_upload_id: fileUpload.id,
-                file: {
-                    filename: filePath.split('/').pop() || 'file',
-                    data,
-                }
-            })
-
-            console.log(`[NOTION] File uploaded: ${file.id}`);
-
-            return file.id;
+        } catch (error: any) {
+            console.error(`[NOTION] Failed to upload file: ${filePath}. Error: ${error.message}`);
+            
+            return null
         }
     }
 }

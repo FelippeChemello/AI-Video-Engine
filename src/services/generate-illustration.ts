@@ -1,4 +1,3 @@
-import { GeminiClient } from "../clients/gemini";
 import { Google } from "../clients/google";
 import { CodeRendererClient } from "../clients/interfaces/CodeRenderer";
 import { ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
@@ -11,7 +10,6 @@ import { Shiki } from "../clients/shiki";
 import { ScriptWithTitle } from "../config/types";
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
-const gemini: ImageGeneratorClient = new GeminiClient();
 const mermaid: MermaidRendererClient = new Mermaid();
 const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
@@ -50,7 +48,7 @@ export async function generateIllustration(segment: ScriptWithTitle['segments'][
         case 'image_generation': 
         default: 
             console.log('Generating image');
-            const mediaGenerated = await gemini.generate({ prompt: segment.illustration.description });
+            const mediaGenerated = await openai.generate({ prompt: segment.illustration.description });
             
             mediaSrc = mediaGenerated.mediaSrc;
             break;

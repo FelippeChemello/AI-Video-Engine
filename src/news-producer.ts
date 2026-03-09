@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { publicDir } from './config/path';
+import { outputDir, publicDir } from './config/path';
 import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -16,36 +16,52 @@ import { synthesizeSpeech } from './services/synthesize-speech';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
 import { generateIllustration } from './services/generate-illustration';
 import { cleanupFiles } from './services/cleanup-files';
+import { generateThumbnails } from './services/generate-thumbnails';
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
 const grok: LLMClient = new GrokClient();
 
-const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
-
 console.log(`Starting research about the latest news`);
 const research = await grok.complete(Agent.NEWS_RESEARCHER, `Research relevant and recent news articles (from the past 24 hours) that would be interesting for our audience.`);
 
 console.log("--------------------------")
 console.log("Research:")
-console.log(research)
+console.log(research.news)
 console.log("--------------------------")
 
-console.log("Writing script based on research...");
-const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, research.news); 
+const shortScripts: ScriptWithTitle[] = await Promise.all(
+    research.news.map(async (newsItem) => {
+        console.log(`Writing script for ${newsItem.headline}...`);
+        const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um único script para um vídeo curto baseado na seguinte notícia: \n\n ${newsItem.headline}:\n ${newsItem.summary} \n\n A notícia é do site ${newsItem.source}.`); 
+        return scriptText.scripts as ScriptWithTitle[];
+    })
+).then(scriptsArrays => scriptsArrays
+    .flat()
+    .map(script => ({
+        ...script,
+        compositions: [Compositions.Portrait],
+    }))
+)
 
-console.log("Reviewing script...");
-const review = await anthropic.complete(Agent.NEWSLETTER_REVIEWER, scriptText.scripts)
+const landscapeScripts = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um script único para um video longo contendo as seguintes notícias: \n\n ${research.news.map(n => `- ${n.headline} (${n.source})`).join('\n')}. O script deve conter uma introdução contextualizando o assunto, um desenvolvimento detalhado de cada notícia, e uma conclusão que amarre tudo. O tom deve ser informativo e envolvente, adequado para um vídeo de formato longo.`)
+    .then(response => response.scripts.map(script => ({
+        ...script,
+        compositions: [Compositions.Landscape],
+    } as ScriptWithTitle)))
 
-const scripts: ScriptWithTitle | ScriptWithTitle[] = review.scripts as ScriptWithTitle | ScriptWithTitle[];
+const scripts: ScriptWithTitle[] = [
+    ...shortScripts,
+    ...landscapeScripts
+];
 
-for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
+for (const script of scripts) {
     console.log(`Processing script: ${script.title}`);
 
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
-    const audio = await synthesizeSpeech(script.segments, MAX_AUDIO_DURATION_FOR_SHORTS);
+    const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     await Promise.all(
@@ -54,12 +70,15 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
             segment.mediaSrc = mediaSrc;
         })
     );
+
+    const thumbnails = script.compositions?.includes(Compositions.Landscape) ? await generateThumbnails(script.title, script.compositions) : [];
         
     await scriptManagerClient.saveScript({
         script,
         scriptSrc: path.basename(scriptTextFile),
-        formats: ENABLED_FORMATS,
-        channels: [Channels.CODESTACK]
+        formats: script.compositions,
+        channels: [Channels.CODESTACK],
+        thumbnailsSrc: thumbnails,
     });
 
     cleanupFiles([
@@ -67,6 +86,7 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
         ...script.audio!.map(a => path.join(publicDir, a.src)),
         ...script.segments
             .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
-            .filter(Boolean) as Array<string>
+            .filter(Boolean) as Array<string>,
+        ...thumbnails.map(t => path.join(outputDir, t)),
     ])
 }

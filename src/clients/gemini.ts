@@ -181,11 +181,14 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
             const imageResult = await genAIPro.models.generateContent({
                 model: 'gemini-3.1-flash-image-preview',
-                contents: `Generate an image for the following prompt: ${prompt}`,
+                contents: [
+                    { text: prompt },
+                    ...(baseImageSrc ? [{ text: 'Use the following image as a reference for the illustration. Do not include any text in the image, only use it as a visual reference to create a new illustration that is consistent with it.', inlineData: { mimeType: 'image/png', data: fs.readFileSync(baseImageSrc).toString('base64') } }] : [])
+                ],
                 config: { 
                     responseModalities: ['text', 'image'],
                     imageConfig: { aspectRatio: '4:3' },
-                    systemInstruction: 'You are a professional illustration art director specialized in creating consistent, visually striking, and story-supportive illustrations for short-form educational and news videos. Your goal is to translate each scene or paragraph of the script into a clear visual reference, defining what should be illustrated, how, and why — keeping the audience’s attention and the video’s pacing in mind.',
+                    systemInstruction: 'You are a professional illustration art director specialized in creating consistent, visually striking, and story-supportive illustrations for short-form educational and news videos. Your goal is to translate each scene or paragraph of the script into a clear visual reference, defining what should be illustrated, how, and why — keeping the audience’s attention and the video’s pacing in mind. Never create complex scenes that would be hard to understand in a few seconds and avoid overloading the image with too many elements and text. Always prioritize clarity, relevance, and visual impact in your illustrations.',
                     ...config
                 },
             })

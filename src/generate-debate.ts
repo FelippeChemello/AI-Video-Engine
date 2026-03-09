@@ -131,8 +131,15 @@ for (const script of scripts) {
         thumbnailsSrc: thumbnails
     });
 
+    const uniqueMediaFiles = new Set<string>();
+    script.segments.forEach(s => {
+        if (s.mediaSrc) {
+            uniqueMediaFiles.add(path.join(publicDir, s.mediaSrc));
+        }
+    });
+
     cleanupFiles([
-        ...script.segments.map(s => s.mediaSrc).filter(Boolean).map(m => path.join(publicDir, m!)),
+        ...uniqueMediaFiles,
         ...audios.map(a => path.join(publicDir, a.src)),
         ...thumbnails.map(t => path.join(outputDir, t)),
         scriptsFilePath

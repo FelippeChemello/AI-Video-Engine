@@ -39,7 +39,7 @@ export const Agents = {
     RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
@@ -51,19 +51,23 @@ export const Agents = {
     NEWS_RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
         },
         outputStructure: z.object({
-            news: z.string(),
+            news: z.array(z.object({
+                headline: z.string(),
+                summary: z.string(),
+                source: z.string(),
+            })),
         }),
     },
     NEWSLETTER_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
@@ -85,7 +89,7 @@ export const Agents = {
     SCRIPT_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
@@ -107,7 +111,7 @@ export const Agents = {
     TINDER_ROAST: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'tinder-roasting-story-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-flash',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
@@ -146,7 +150,7 @@ export const Agents = {
     SCRIPT_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
@@ -168,7 +172,7 @@ export const Agents = {
     NEWSLETTER_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
@@ -190,7 +194,7 @@ export const Agents = {
     SEO_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'seo.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
@@ -205,7 +209,7 @@ export const Agents = {
     MERMAID_GENERATOR: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'mermaid-generator.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
@@ -217,7 +221,7 @@ export const Agents = {
     DEBATE: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-haiku-4-5',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
@@ -229,7 +233,7 @@ export const Agents = {
     DEBATE_COUNCIL: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate-council.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.2',
+            [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
             [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
