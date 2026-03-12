@@ -18,7 +18,7 @@ export async function generateIllustration(segment: ScriptWithTitle['segments'][
     if (!segment.illustration) return undefined;
     
     let mediaSrc: string | undefined;
-        
+    
     switch (segment.illustration.type) {
         case 'mermaid': 
             console.log('Generating mermaid')

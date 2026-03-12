@@ -7,12 +7,13 @@ import { v4 } from 'uuid';
 import { ENV } from '../config/env';
 import { outputDir, publicDir } from '../config/path';
 import { TTSClient, voices, Speaker } from './interfaces/TTS';
-import { Script } from '../config/types';
+import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent, AgentOutput } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { zodTextFormat } from 'openai/helpers/zod.mjs';
+import { cleanupFiles } from '../services/cleanup-files';
 
 const openai = new OpenAI({
     apiKey: ENV.OPENAI_API_KEY,
@@ -31,7 +32,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
             input: text,
         })
 
-        const speechFile = `audio-${typeof id === 'undefined' ? v4() : id}.mp3`
+        const speechFile = `audio-${id ?? v4()}.mp3`;
         const buffer = Buffer.from(await response.arrayBuffer());
         fs.writeFileSync(path.join(publicDir, speechFile), buffer);
 
@@ -65,6 +66,8 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
             audioResults.map((result) => path.join(publicDir, result.audioFileName)),
             filePath
         );
+
+        cleanupFiles(audioResults.map((result) => path.join(publicDir, result.audioFileName)));
 
         console.log(`[OPENAI] Merged audio file created`);
 
@@ -137,7 +140,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
             model: 'gpt-4.1',
             input: [{
                 role: 'system',
-                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
+                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
             }, {
                 role: 'user',
                 content: customImage ? [ 
@@ -162,7 +165,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                     }
                 ]
             }],
-            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', input_fidelity: 'low', output_format: 'png', size: '1024x1536' }],
+            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', input_fidelity: 'low', output_format: 'png', size: orientation === Orientation.PORTRAIT ? '1024x1536' : '1536x1024', model: 'gpt-image-1.5' }],
         })
 
         const imageData = response.output.find(out => out.type === 'image_generation_call');

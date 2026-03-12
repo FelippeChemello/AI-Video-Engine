@@ -8,7 +8,6 @@ import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
 import { titleToFileName } from './utils/title-to-filename';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
-import { AnthropicClient } from "./clients/anthropic";
 import { ENV } from './config/env';
 import { GrokClient } from './clients/grok';
 import { saveScriptFile } from './services/save-script-file';
@@ -20,11 +19,12 @@ import { generateThumbnails } from './services/generate-thumbnails';
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
-const anthropic: LLMClient = new AnthropicClient();
 const grok: LLMClient = new GrokClient();
 
+const latestNewsScript = await scriptManagerClient.retrieveLatestScripts(10, Compositions.Portrait);
+
 console.log(`Starting research about the latest news`);
-const research = await grok.complete(Agent.NEWS_RESEARCHER, `Research relevant and recent news articles (from the past 24 hours) that would be interesting for our audience.`);
+const research = await grok.complete(Agent.NEWS_RESEARCHER, `Research relevant and recent news articles (from the past 12 hours) that would be interesting for our audience. We have already published these topics recently: ${latestNewsScript.map(s => s.title).join(', ')}. Prioritize news that are different from what we have already covered!`);
 
 console.log("--------------------------")
 console.log("Research:")
@@ -33,8 +33,8 @@ console.log("--------------------------")
 
 const shortScripts: ScriptWithTitle[] = await Promise.all(
     research.news.map(async (newsItem) => {
-        console.log(`Writing script for ${newsItem.headline}...`);
-        const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um único script para um vídeo curto baseado na seguinte notícia: \n\n ${newsItem.headline}:\n ${newsItem.summary} \n\n A notícia é do site ${newsItem.source}.`); 
+        console.log(`Writing script for "${newsItem.headline}"`);
+        const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um único script para um vídeo curto baseado na seguinte notícia: \n\n ${newsItem.headline}:\n ${newsItem.summary} \n\n A notícia é do site ${newsItem.source}.`)
         return scriptText.scripts as ScriptWithTitle[];
     })
 ).then(scriptsArrays => scriptsArrays
@@ -45,31 +45,40 @@ const shortScripts: ScriptWithTitle[] = await Promise.all(
     }))
 )
 
-const landscapeScripts = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um script único para um video longo contendo as seguintes notícias: \n\n ${research.news.map(n => `- ${n.headline} (${n.source})`).join('\n')}. O script deve conter uma introdução contextualizando o assunto, um desenvolvimento detalhado de cada notícia, e uma conclusão que amarre tudo. O tom deve ser informativo e envolvente, adequado para um vídeo de formato longo.`)
+console.log(`Writing landscape script covering all news...`);
+const landscapeScripts = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um script único para um video (aproximadamente 7 minutos) contendo as seguintes notícias: \n\n ${research.news.map(n => `- ${n.headline} (${n.source})`).join('\n')}. O script deve conter uma introdução contextualizando o assunto, um desenvolvimento detalhado de cada notícia, e uma conclusão que amarre tudo. O tom deve ser informativo e envolvente, adequado para um vídeo de formato longo.`)
     .then(response => response.scripts.map(script => ({
         ...script,
         compositions: [Compositions.Landscape],
     } as ScriptWithTitle)))
 
 const scripts: ScriptWithTitle[] = [
+    ...landscapeScripts,
     ...shortScripts,
-    ...landscapeScripts
 ];
+
+await Promise.all(
+    scripts.map(async (script) => {
+        const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
+        script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
+    })
+);
 
 for (const script of scripts) {
     console.log(`Processing script: ${script.title}`);
 
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
-    const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
-    script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
-
     await Promise.all(
         script.segments.map(async (segment) => {
-            const mediaSrc = await generateIllustration(segment);
+            const mediaSrc = await generateIllustration(segment).catch(err => {
+                console.error(`Error generating illustration for segment "${segment.text.substring(0, 30)}...":`, err);
+                return undefined;
+            });
+
             segment.mediaSrc = mediaSrc;
         })
-    );
+    )
 
     const thumbnails = script.compositions?.includes(Compositions.Landscape) ? await generateThumbnails(script.title, script.compositions) : [];
         

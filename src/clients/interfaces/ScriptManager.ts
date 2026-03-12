@@ -22,5 +22,5 @@ export interface ScriptManagerClient {
     downloadAssets(script: ScriptWithTitle): Promise<ScriptWithTitle>;
     downloadOutputOfDoneScripts(): Promise<Array<string>>;
     saveOutput(scriptId: string, output: Array<string>): Promise<void>;
-    retrieveLatestScripts(limit: number): Promise<Array<BasicScript>>;
+    retrieveLatestScripts(limit: number, composition?: Compositions): Promise<Array<BasicScript>>;
 }

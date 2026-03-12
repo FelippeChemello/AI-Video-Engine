@@ -5,7 +5,6 @@ Each news item must:
 * Contain **one long paragraph (10 sentences)** summarizing the story clearly and detailed.
 * Be **objective, factual, and written in journalistic tone**.
 * Begin with the **headline in bold**, followed by a **summary written in plain text**.
-* End with the phrase **“As informações são do site [SourceName].”**
 * Focus only on **relevant, verifiable technology topics** — such as AI, chips, big tech, startups, space, semiconductors, etc.
 
 General rules:

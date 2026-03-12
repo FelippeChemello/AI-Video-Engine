@@ -5,7 +5,7 @@ import { v4 } from 'uuid';
 import splitFile from 'split-file'
 import { SingleBar } from 'cli-progress'
 
-import { BasicScript, NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../config/types";
+import { BasicScript, Compositions, NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../config/types";
 import { ENV } from "../config/env";
 import { outputDir, publicDir } from "../config/path";
 import { SaveScriptParams, ScriptManagerClient } from './interfaces/ScriptManager';
@@ -190,7 +190,7 @@ export class NotionClient implements ScriptManagerClient {
         });
     }
 
-    async retrieveLatestScripts(limit: number): Promise<Array<BasicScript>> {
+    async retrieveLatestScripts(limit: number, composition?: Compositions): Promise<Array<BasicScript>> {
         console.log(`[NOTION] Retrieving latest ${limit} scripts`);
 
         const response = await client.databases.query({
@@ -201,6 +201,12 @@ export class NotionClient implements ScriptManagerClient {
                     direction: 'descending',
                 }
             ],
+            filter: composition ? {
+                property: 'Composition',
+                multi_select: {
+                    contains: composition,
+                }
+            } : undefined,
             page_size: limit > 0 && limit <= 100 ? limit : 100,
         })
 
@@ -294,10 +300,21 @@ export class NotionClient implements ScriptManagerClient {
 
             console.log(`[NOTION] [PAGE:${pageIndex}/${response.results.length}]: ${title}`);
 
-            const blocks = await client.blocks.children.list({
-                block_id: page.id,
-                page_size: 1000,
-            }) as unknown as { results: Array<BlockObjectRequest> };
+            const blocks: { results: Array<BlockObjectRequest> } = { results: [] };
+            let hasMore = true;
+            let startCursor: string | undefined = undefined;
+
+            while (hasMore) {
+                const response = await client.blocks.children.list({
+                    block_id: page.id,
+                    page_size: 100,
+                    start_cursor: startCursor,
+                }) as unknown as { results: Array<BlockObjectRequest>; has_more: boolean; next_cursor: string | null };
+
+                blocks.results.push(...response.results);
+                hasMore = response.has_more;
+                startCursor = response.next_cursor ?? undefined;
+            }
 
             let lastSpeaker: Speaker = Speaker.Cody;
             if (blocks.results[0].type === 'paragraph' || blocks.results[0].type === 'column_list') {

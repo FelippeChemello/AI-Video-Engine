@@ -157,7 +157,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
             audioBuffer = convertToWav(data, mimeType!)
         }
 
-        const audioFileName = `audio-${id}.${fileExtension}`;
+        const audioFileName = `audio-${id ?? v4()}.${fileExtension}`;
         const filePath = `${publicDir}/${audioFileName}`
 
         writeFileSync(filePath, audioBuffer, 'utf-8')

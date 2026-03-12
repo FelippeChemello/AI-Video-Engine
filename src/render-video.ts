@@ -22,9 +22,12 @@ import { ENV } from './config/env';
 import { Agent, LLMClient } from './clients/interfaces/LLM';
 import { OpenAIClient } from './clients/openai';
 import { sanitizeText } from './utils/sanitize-text';
+import { ImageEditorClient } from './clients/interfaces/ImageEditor';
+import { SharpClient } from './clients/sharp';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
+const MAX_SIZE_THUMBNAIL_IN_MB = 2;
 
 const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
@@ -33,6 +36,7 @@ const openai: LLMClient = new OpenAIClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
 const youtube: VideoUploaderClient = new Youtube();
+const imageEditor: ImageEditorClient = new SharpClient();
 
 const scripts = await defaultScriptManager.retrieveScript(ScriptStatus.NOT_STARTED);
 
@@ -159,11 +163,15 @@ for (const scriptIndex in scripts) {
                     return t.filename.includes(thumbOrientation);
                 })
 
+                const thumbnailFilePath = thumbnail 
+                    ? await imageEditor.compressImageToMaxSize(path.join(outputDir, thumbnail.src), MAX_SIZE_THUMBNAIL_IN_MB * 1024) 
+                    : undefined;
+
                 const uploadResult = await youtube.uploadVideo(
                     video.videoPath,
                     seo.title,
                     `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
-                    thumbnail ? path.join(outputDir, thumbnail.src) : undefined,
+                    thumbnailFilePath,
                     seo.tags,
                     dayjs().add(Number(scriptIndex), 'hours').toDate()
                 );

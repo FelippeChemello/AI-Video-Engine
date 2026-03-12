@@ -4,7 +4,7 @@ import { ENV } from '../config/env';
 import { VideoUploaderClient } from './interfaces/VideoUploader';
 
 export class Youtube implements VideoUploaderClient {
-  private auth = new google.auth.OAuth2(
+    private auth = new google.auth.OAuth2(
         ENV.GOOGLE_CLIENT_ID,
         ENV.GOOGLE_CLIENT_SECRET,
     )
