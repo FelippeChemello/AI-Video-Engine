@@ -13,7 +13,10 @@ export async function generateThumbnails(title: string, compositions: Array<Comp
             const { mediaSrc: thumbnailSrc } = await gemini.generateThumbnail({
                 orientation: format,
                 videoTitle: title,
-            })
+            }).catch(err => {
+                console.error(`Error generating ${format} thumbnail:`, err);
+                return { mediaSrc: undefined };
+            });
 
             return thumbnailSrc;
         })

@@ -81,6 +81,11 @@ export type NotionMainDatabasePage = {
       type: 'rich_text';
       rich_text: Array<{ text: { content: string } }>;
     },
+    Date: {
+      id: string;
+      type: 'date';
+      date: { start: string };
+    },
     Settings: {
       id: string;
       type: 'rich_text';
@@ -180,6 +185,7 @@ export type ScriptWithTitle = {
     settings?: any;
     thumbnails?: Array<{ filename: string; src: string }>;
     channels?: Array<Channels>;
+    date?: Date;
 }
 
 export type SEO = {

@@ -16,6 +16,7 @@ import { synthesizeSpeech } from './services/synthesize-speech';
 import { generateIllustration } from './services/generate-illustration';
 import { generateThumbnails } from './services/generate-thumbnails';
 import { cleanupFiles } from './services/cleanup-files';
+import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
@@ -42,18 +43,17 @@ console.log("Research:")
 console.log(research.research)
 console.log("--------------------------")
 
-const scripts: Array<ScriptWithTitle> = []
-
-for (const composition of ENABLED_FORMATS) {
+const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
     console.log(`Writing ${composition} script based on research...`);
     const scriptText = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`);
 
-    console.log("Reviewing script...");
-    const review = await anthropic.complete(Agent.SCRIPT_REVIEWER, `Roteiro inicial: ${scriptText.scripts}\n\n Revise o roteiro acima e sugira melhorias para torná-lo mais envolvente e adequado para um vídeo de ${compositionVideoLengthMap[composition]}. Considere aspectos como clareza, estrutura, engajamento e adequação ao público-alvo. Forneça uma versão revisada do roteiro com as melhorias implementadas.`);
+    const review = await anthropic.complete(Agent.SCRIPT_REVIEWER, `Roteiro inicial: ${JSON.stringify(scriptText.scripts)}\n\n Revise o roteiro acima e sugira melhorias para torná-lo mais envolvente e adequado para um vídeo de ${compositionVideoLengthMap[composition]}. Considere aspectos como clareza, estrutura, engajamento e adequação ao público-alvo. Forneça uma versão revisada do roteiro com as melhorias implementadas.`);
 
-    scripts.push(...review.scripts as Array<ScriptWithTitle>);
-}
-
+    return review.scripts.map(script => ({
+        ...script,
+        compositions: [composition]
+    })) as Array<ScriptWithTitle>;
+})).then(scripts => scripts.flat());
 
 for (const script of scripts) {
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
@@ -65,15 +65,15 @@ for (const script of scripts) {
         })
     );
 
-    const thumbnails = await generateThumbnails(script.title, ENABLED_FORMATS);    
+    const thumbnails = await generateThumbnails(script.title, script.compositions!);    
 
-    const audio = await synthesizeSpeech(script.segments);
+    const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     await scriptManagerClient.saveScript({
         script,
         thumbnailsSrc: thumbnails,
-        formats: ENABLED_FORMATS,
+        formats: script.compositions!,
         channels: [Channels.CODESTACK]
     })
 

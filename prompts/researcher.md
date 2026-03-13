@@ -26,3 +26,4 @@ Answer Structure
 • Write in a neutral, informative tone.
 • Be very descriptive and thorough.
 • Use only plain text without markdown or formatting.
+• Respond as a JSON object with a "research" field containing your findings, be verbose and detailed!

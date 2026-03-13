@@ -31,7 +31,7 @@ export class NotionClient implements ScriptManagerClient {
         this.databaseId = databaseId || ENV.NOTION_DEFAULT_DATABASE_ID;
     }
 
-    async saveScript({ script, formats, scriptSrc, seo, settings, thumbnailsSrc, channels }: SaveScriptParams): Promise<void> {
+    async saveScript({ script, formats, scriptSrc, seo, settings, thumbnailsSrc, channels, date }: SaveScriptParams): Promise<void> {
         console.log(`[NOTION] Saving script ${script.title}`);
 
         const audioFileIds: string[] = []
@@ -94,7 +94,7 @@ export class NotionClient implements ScriptManagerClient {
                     }))
                 },
                 Date: {
-                    date: { start: new Date().toISOString() },
+                    date: { start: (date ?? new Date()).toISOString() },
                 },
                 Settings: {
                     rich_text: [{ type: 'text', text: { content: settings ? JSON.stringify(settings) : '' } }],
@@ -291,6 +291,7 @@ export class NotionClient implements ScriptManagerClient {
             const settings = page.properties.Settings.rich_text[0]?.text.content ? JSON.parse(page.properties.Settings.rich_text[0].text.content) : undefined;
             const outputs = page.properties.Output.files;
             const channels = page.properties.Channel.multi_select.map((c) => c.name);
+            const date = page.properties.Date.date.start ? new Date(page.properties.Date.date.start) : undefined;
 
             const thumbnails = outputs
               .filter(file => file.name.includes('Thumbnail'))
@@ -404,6 +405,7 @@ export class NotionClient implements ScriptManagerClient {
                 settings,
                 thumbnails,
                 channels,
+                date,
             });
         }
 

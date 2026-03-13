@@ -24,6 +24,7 @@ import { OpenAIClient } from './clients/openai';
 import { sanitizeText } from './utils/sanitize-text';
 import { ImageEditorClient } from './clients/interfaces/ImageEditor';
 import { SharpClient } from './clients/sharp';
+import { getPublishDate } from './utils/get-publish-date';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
@@ -167,13 +168,20 @@ for (const scriptIndex in scripts) {
                     ? await imageEditor.compressImageToMaxSize(path.join(outputDir, thumbnail.src), MAX_SIZE_THUMBNAIL_IN_MB * 1024) 
                     : undefined;
 
+                const publishDate = await getPublishDate({
+                    addHours: Number(scriptIndex),
+                    notBefore: script.date
+                });
+
+                console.log(`Publishing video with title: ${seo.title} at ${publishDate}...`);
+
                 const uploadResult = await youtube.uploadVideo(
                     video.videoPath,
                     seo.title,
                     `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
                     thumbnailFilePath,
                     seo.tags,
-                    dayjs().add(Number(scriptIndex), 'hours').toDate()
+                    publishDate
                 );
 
                 console.log(`Video uploaded: ${uploadResult.url}`);

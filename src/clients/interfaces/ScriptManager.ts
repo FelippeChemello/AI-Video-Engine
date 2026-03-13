@@ -7,7 +7,8 @@ export type SaveScriptParams = {
     formats?: Array<Compositions>;
     scriptSrc?: string;
     settings?: any;
-    channels?: Array<Channels>
+    channels?: Array<Channels>;
+    date?: Date;
 };
 
 export interface ScriptManagerClient {

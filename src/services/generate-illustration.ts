@@ -24,7 +24,10 @@ export async function generateIllustration(segment: ScriptWithTitle['segments'][
             console.log('Generating mermaid')
 
             const mermaidCode = await openai.complete(Agent.MERMAID_GENERATOR, `Specification: ${segment.illustration.description} \n\nContext: ${segment.text}`);
-            const exportedMermaid = await mermaid.exportMermaid(mermaidCode.mermaid);
+            const exportedMermaid = await mermaid.exportMermaid(mermaidCode.mermaid).catch(err => {
+                console.error('Error exporting mermaid:', err);
+                return { mediaSrc: undefined };
+            });
 
             mediaSrc = exportedMermaid.mediaSrc;
             break;
