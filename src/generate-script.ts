@@ -22,7 +22,11 @@ const anthropic: LLMClient = new AnthropicClient();
 const gemini: LLMClient & ImageGeneratorClient & TTSClient = new GeminiClient();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
-const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
+const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait, Compositions.Landscape];
+const compositionVideoLengthMap: Partial<Record<Compositions, string>> = {
+    [Compositions.Portrait]: '2 minutos e não mais que 3 minutos',
+    [Compositions.Landscape]: '8 minutos'
+};
 
 const topic = process.argv[2]
 if (!topic) {
@@ -35,17 +39,23 @@ const research = await gemini.complete(Agent.RESEARCHER, `Tópico: ${topic}`);
 
 console.log("--------------------------")
 console.log("Research:")
-console.log(research)
+console.log(research.research)
 console.log("--------------------------")
 
-console.log("Writing script based on research...");
-const scriptText = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}`);
+const scripts: Array<ScriptWithTitle> = []
 
-console.log("Reviewing script...");
-const review = await anthropic.complete(Agent.SCRIPT_REVIEWER, scriptText.scripts)
-const scripts = review.scripts as ScriptWithTitle | ScriptWithTitle[];
+for (const composition of ENABLED_FORMATS) {
+    console.log(`Writing ${composition} script based on research...`);
+    const scriptText = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`);
 
-for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
+    console.log("Reviewing script...");
+    const review = await anthropic.complete(Agent.SCRIPT_REVIEWER, `Roteiro inicial: ${scriptText.scripts}\n\n Revise o roteiro acima e sugira melhorias para torná-lo mais envolvente e adequado para um vídeo de ${compositionVideoLengthMap[composition]}. Considere aspectos como clareza, estrutura, engajamento e adequação ao público-alvo. Forneça uma versão revisada do roteiro com as melhorias implementadas.`);
+
+    scripts.push(...review.scripts as Array<ScriptWithTitle>);
+}
+
+
+for (const script of scripts) {
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
     await Promise.all(

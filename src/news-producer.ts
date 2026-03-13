@@ -31,7 +31,7 @@ console.log("Research:")
 console.log(research.news)
 console.log("--------------------------")
 
-const shortScripts: ScriptWithTitle[] = await Promise.all(
+const scripts: ScriptWithTitle[] = await Promise.all(
     research.news.map(async (newsItem) => {
         console.log(`Writing script for "${newsItem.headline}"`);
         const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um único script para um vídeo curto baseado na seguinte notícia: \n\n ${newsItem.headline}:\n ${newsItem.summary} \n\n A notícia é do site ${newsItem.source}.`)
@@ -44,18 +44,6 @@ const shortScripts: ScriptWithTitle[] = await Promise.all(
         compositions: [Compositions.Portrait],
     }))
 )
-
-console.log(`Writing landscape script covering all news...`);
-const landscapeScripts = await openai.complete(Agent.NEWSLETTER_WRITER, `Crie um script único para um video (aproximadamente 7 minutos) contendo as seguintes notícias: \n\n ${research.news.map(n => `- ${n.headline} (${n.source})`).join('\n')}. O script deve conter uma introdução contextualizando o assunto, um desenvolvimento detalhado de cada notícia, e uma conclusão que amarre tudo. O tom deve ser informativo e envolvente, adequado para um vídeo de formato longo.`)
-    .then(response => response.scripts.map(script => ({
-        ...script,
-        compositions: [Compositions.Landscape],
-    } as ScriptWithTitle)))
-
-const scripts: ScriptWithTitle[] = [
-    ...landscapeScripts,
-    ...shortScripts,
-];
 
 await Promise.all(
     scripts.map(async (script) => {

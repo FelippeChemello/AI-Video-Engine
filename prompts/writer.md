@@ -289,7 +289,6 @@ These are just examples, you should create a new script based on the topic provi
 <attention>
 Remember that "illustration" is optional and should only be presented in the segment when it is relevant to the text and strictly necessary (it costs a lot), and to not include any person in the images.
 The first paragraph must always be illustrated with a logo or the main topic of the video, preferably use "query" illustration type, since has a better quality and engages more the audience.
-The final video should be at around 3 minutes long!
 Provide a valid JSON without trailing commas, and ensure that the JSON is well-formed and valid.
 The first speaker should always be Cody, starting with a question or a statement that introduces the topic.
 Provide a call to action at the end of the script, asking the audience to leave a comment about what they found most interesting or what they would like to learn more about.
