@@ -34,6 +34,8 @@ const envSchema = z.object({
     NOTION_DEFAULT_DATABASE_ID: z.string(),
 
     ELEVENLABS_API_KEY: z.string(),
+
+    FISH_AUDIO_API_KEY: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

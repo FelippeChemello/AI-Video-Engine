@@ -7,10 +7,10 @@ import { publicDir } from "../config/path";
 import { ScriptWithTitle } from "../config/types";
 import { FFmpegClient } from "../clients/ffmpeg";
 import { AudioEditorClient } from "../clients/interfaces/AudioEditor";
-import { OpenAIClient } from "../clients/openai";
+import { FishAudioTTSClient } from "../clients/fishaudio";
 
 const gemini: TTSClient = new GeminiClient();
-const openai: TTSClient = new OpenAIClient();
+const fishaudio: TTSClient = new FishAudioTTSClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
 export async function synthesizeSpeech(segments: ScriptWithTitle['segments'], maxDurationInSeconds?: number): Promise<{ audioFileName: string, duration?: number }> {
@@ -18,7 +18,7 @@ export async function synthesizeSpeech(segments: ScriptWithTitle['segments'], ma
     try {
         audio = await gemini.synthesizeScript(segments);
     } catch (error) {
-        audio = await openai.synthesizeScript(segments);
+        audio = await fishaudio.synthesizeScript(segments);
     }
 
     if (!maxDurationInSeconds || !audio.duration) return audio

@@ -57,6 +57,7 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
+    "fish-audio": "^0.1.0",
     "fluent-ffmpeg": "^2.1.3",
     "get-audio-duration": "^4.0.1",
     "get-video-duration": "^4.1.0",
