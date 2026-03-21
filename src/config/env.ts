@@ -12,7 +12,8 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     GMAIL_REFRESH_TOKEN: z.string(),
-    YOUTUBE_REFRESH_TOKEN: z.string(),
+    YOUTUBE_REFRESH_TOKEN_CODESTACK: z.string(),
+    YOUTUBE_REFRESH_TOKEN_ALMA_DE_TERREIRO: z.string(),
     
     AENEAS_BASE_URL: z.string(),
     AENEAS_API_KEY: z.string(),

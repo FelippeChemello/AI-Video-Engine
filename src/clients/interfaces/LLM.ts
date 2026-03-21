@@ -20,6 +20,9 @@ export enum Agent {
     DEBATE = 'DEBATE',
 
     TINDER_ROAST = 'TINDER_ROAST',
+
+    RELIGIOUS_UMBANDA_RESEARCHER = 'RELIGIOUS_UMBANDA_RESEARCHER',
+    RELIGIOUS_UMBANDA_WRITER = 'RELIGIOUS_UMBANDA_WRITER',
 }
 
 enum ModelProvider {
@@ -42,7 +45,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             research: z.string(),
@@ -54,7 +57,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             news: z.array(z.object({
@@ -70,7 +73,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -92,7 +95,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -114,7 +117,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
             [ModelProvider.GEMINI]: 'gemini-2.5-flash',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
           meta: z.object({
@@ -153,7 +156,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -175,7 +178,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -197,7 +200,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             title: z.string(),
@@ -212,7 +215,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             mermaid: z.string(),
@@ -224,7 +227,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-haiku-4-5',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-non-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             position: z.string(),
@@ -236,7 +239,7 @@ export const Agents = {
             [ModelProvider.OPENAI]: 'gpt-5.4',
             [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
             [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4-1-fast-reasoning',
+            [ModelProvider.GROK]: 'grok-4.20',
         },
         outputStructure: z.object({
             title: z.string(),
@@ -245,10 +248,44 @@ export const Agents = {
             ending: z.string(),
         })
     },
+    RELIGIOUS_UMBANDA_RESEARCHER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-researcher.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5.4',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
+            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
+            [ModelProvider.GROK]: 'grok-4.20',
+        },
+        outputStructure: z.object({
+            research: z.string(),
+        }),
+    },
+    RELIGIOUS_UMBANDA_WRITER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-writer.md'), 'utf-8'),
+        model: {
+            [ModelProvider.OPENAI]: 'gpt-5.4',
+            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
+            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
+            [ModelProvider.GROK]: 'grok-4.20',
+        },
+        outputStructure: z.object({
+            scripts: z.array(z.object({
+                title: z.string(),
+                segments: z.array(z.object({
+                    speaker: z.enum(['Priest']),
+                    text: z.string(),
+                    illustration: z.object({
+                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                        description: z.string(),
+                    }).optional().nullable(),
+                })),
+            }))
+        })
+    },
 } satisfies Record<Agent, AgentConfig>;
 
 export type AgentOutput<T extends Agent> = z.infer<typeof Agents[T]['outputStructure']>;
 
 export interface LLMClient {
-    complete<T extends Agent>(agent: T, prompt: string | unknown): Promise<AgentOutput<T>>;
+    complete<T extends Agent>(agent: T, prompt: string | unknown, filesSrc?: Array<string>): Promise<AgentOutput<T>>;
 }

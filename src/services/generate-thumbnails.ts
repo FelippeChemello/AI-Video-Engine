@@ -1,26 +1,37 @@
 import { GeminiClient } from "../clients/gemini";
-import { ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
-import { compositionOrientationMap, Compositions } from "../config/types";
+import { channelThumbnailConfig, ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
+import { Channels, compositionOrientationMap, Compositions } from "../config/types";
 
 const gemini: ImageGeneratorClient = new GeminiClient();
 
-export async function generateThumbnails(title: string, compositions: Array<Compositions>): Promise<Array<string>> {
-    const thumbnails = await Promise.all(
-        compositions.map(async (comp) => {
-            const format = compositionOrientationMap[comp];
+export async function generateThumbnails(title: string, compositions: Array<Compositions>, channels: Array<Channels>): Promise<Array<string>> {
+    const thumbnailsPromises = []
 
-            console.log(`Generating ${format} thumbnail...`);
-            const { mediaSrc: thumbnailSrc } = await gemini.generateThumbnail({
-                orientation: format,
-                videoTitle: title,
-            }).catch(err => {
-                console.error(`Error generating ${format} thumbnail:`, err);
-                return { mediaSrc: undefined };
-            });
+    for (const composition of compositions) {
+        for (const channel of channels) {
+            const { prompter, imageBaseSrc } = channelThumbnailConfig[channel] || {};
 
-            return thumbnailSrc;
-        })
-    );
+            const prompt = prompter ? prompter(title) : undefined;
+
+            thumbnailsPromises.push(
+                gemini.generateThumbnail({
+                    videoTitle: title,
+                    orientation: compositionOrientationMap[composition],
+                    customImage: imageBaseSrc && prompt ? {
+                        prompt,
+                        src: imageBaseSrc,
+                    } : undefined,
+                })
+                .then(({ mediaSrc }) => mediaSrc)
+                .catch((err) => {
+                    console.error(`Error generating thumbnail for composition ${composition} and channel ${channel}:`, err);
+                    return null; 
+                })
+            )
+        }
+    }
+
+    const thumbnails = await Promise.all(thumbnailsPromises);
 
     return thumbnails.filter(Boolean) as Array<string>;
 }

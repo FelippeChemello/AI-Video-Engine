@@ -5,10 +5,10 @@ import { v4 } from 'uuid';
 import splitFile from 'split-file'
 import { SingleBar } from 'cli-progress'
 
-import { BasicScript, Compositions, NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../config/types";
+import { BasicScript, Channels, Compositions, NotionMainDatabasePage, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../config/types";
 import { ENV } from "../config/env";
 import { outputDir, publicDir } from "../config/path";
-import { SaveScriptParams, ScriptManagerClient } from './interfaces/ScriptManager';
+import { channelAssetsMap, SaveScriptParams, ScriptManagerClient } from './interfaces/ScriptManager';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 import console from 'console';
 import path from 'path';
@@ -273,6 +273,12 @@ export class NotionClient implements ScriptManagerClient {
                     equals: status,
                 },
             },
+            sorts: [
+                {
+                    property: 'Date',
+                    direction: 'ascending',
+                }
+            ],
             page_size: limit && limit > 0 && limit <= 100 ? limit : 100,
         })
 
@@ -424,26 +430,10 @@ export class NotionClient implements ScriptManagerClient {
         })
     }
 
-    async retrieveAssets(pageId: string): Promise<{ background: VideoBackground }> {
-        console.log(`[NOTION] Retrieving assets for page ${pageId}`);
+    async retrieveAssets(channel: Channels): Promise<{ background: VideoBackground }> {
+        console.log(`[NOTION] Retrieving assets for channel ${channel}`);
 
-        const assets = fs.readdirSync(path.join(publicDir, 'assets'));
-
-        const availableBackgroundVideos = assets
-            .filter(file => file.endsWith('.mp4'))
-            .map(file => ({
-                src: `assets/${file}`,
-                name: file.replace('.mp4', ''),
-            }));
-
-        const randomBackgroundVideo = availableBackgroundVideos[Math.floor(Math.random() * availableBackgroundVideos.length)];
-
-        const availableGIFs = assets
-            .filter(file => file.endsWith('.gif'))
-            .map(file => ({
-                src: `assets/${file}`,
-                name: file.replace('.gif', ''),
-            }));
+        const availableGIFs = channelAssetsMap[channel]?.backgroundPaths || [];
 
         const randomGIF = availableGIFs[Math.floor(Math.random() * availableGIFs.length)];
 
@@ -452,15 +442,11 @@ export class NotionClient implements ScriptManagerClient {
             mainColor: "oklch(68.5% 0.169 237.323)",
             secondaryColor: "oklch(29.3% 0.066 243.157)",
             seed: v4(),
-            video: {
-                src: randomBackgroundVideo?.src,
-            },
-            gif: {
-                src: randomGIF?.src,
-            }
+            video: undefined,
+            gif: randomGIF ? { src: `assets/${path.basename(randomGIF)}` } : undefined,
         }
 
-        console.log(`[NOTION] Selected background video: ${randomBackgroundVideo?.name || 'none'} and GIF: ${randomGIF?.name || 'none'}`);
+        console.log(`[NOTION] Retrieved assets for channel ${channel}: ${background.gif ? `GIF - ${background.gif.src}` : 'No GIF available'}`);
 
         return { background };
     }

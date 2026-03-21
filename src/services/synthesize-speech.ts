@@ -11,14 +11,27 @@ import { FishAudioTTSClient } from "../clients/fishaudio";
 
 const gemini: TTSClient = new GeminiClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
+const openai: TTSClient = new GeminiClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
-export async function synthesizeSpeech(segments: ScriptWithTitle['segments'], maxDurationInSeconds?: number): Promise<{ audioFileName: string, duration?: number }> {
-    let audio: SynthesizedAudio;
-    try {
-        audio = await gemini.synthesizeScript(segments);
-    } catch (error) {
-        audio = await fishaudio.synthesizeScript(segments);
+export async function synthesizeSpeech(
+    segments: ScriptWithTitle['segments'], 
+    maxDurationInSeconds?: number,
+    engines: Array<TTSClient> = [gemini, fishaudio, openai]
+): Promise<{ audioFileName: string, duration?: number }> {
+    let audio: SynthesizedAudio | undefined;
+    for (const engine of engines) {
+        try {
+            audio = await engine.synthesizeScript(segments);
+            console.log(`Audio synthesized successfully with ${engine.constructor.name}`);
+            break;
+        } catch (error) {
+            console.error(`Error synthesizing audio with ${engine.constructor.name}:`, error);
+        }
+    }
+
+    if (!audio) {
+        throw new Error("All TTS engines failed to synthesize speech.");
     }
 
     if (!maxDurationInSeconds || !audio.duration) return audio

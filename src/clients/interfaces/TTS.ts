@@ -16,6 +16,8 @@ export enum Speaker {
     Gemini = 'Gemini',
 
     Roaster = 'Roaster',
+
+    Priest = 'Priest',
 }
 
 enum VoiceProvider {
@@ -83,6 +85,13 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.GEMINI]: 'Umbriel',
         [VoiceProvider.FISH_AUDIO]: 'f10700a1a6fb400880df70b9d176ccb2',
     }, 
+    Priest: {
+        [VoiceProvider.ELEVENLABS]: 'liAlPCvGDJ0qsfPupueo',
+        [VoiceProvider.OPENAI]: 'echo - Brazilian, Calm, deep, authoritative, neutral accent with clear diction. Warm and engaging storytelling voice, conveying trust and reliability. Very fast pace with dramatic pauses for emphasis, drawing listeners into the narrative.',
+        [VoiceProvider.VIBEVOICE]: 'Speaker 1',
+        [VoiceProvider.GEMINI]: 'Zephyr',
+        [VoiceProvider.FISH_AUDIO]: '0b12d715e4c741399594fccb12d4bbe2',
+    }
 }
 
 export interface TTSClient {
