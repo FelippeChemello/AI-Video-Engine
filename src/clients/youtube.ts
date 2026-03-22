@@ -53,6 +53,7 @@ export class Youtube implements VideoUploaderClient {
                     privacyStatus: scheduledPublishTime ? 'private' : 'public',
                     publishAt: scheduledPublishTime ? scheduledPublishTime.toISOString() : undefined,
                     madeForKids: false,
+                    selfDeclaredMadeForKids: false,
                 },
             },
             media: {
