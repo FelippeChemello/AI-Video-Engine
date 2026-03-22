@@ -202,7 +202,9 @@ for (const scriptIndex in scripts) {
             path.join(publicDir, scriptFileName),
             ...script.segments
                 .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
-                .filter(Boolean) as Array<string>
+                .filter(Boolean) as Array<string>,
+            ...videos.map(v => v.videoPath),
+            ...script.thumbnails?.map(t => path.join(outputDir, t.src)) || []
         ];
 
         cleanupFiles(filesToCleanup);
