@@ -13,6 +13,10 @@ export enum Compositions {
 
     // Tinder Roast
     TinderRoast = 'TinderRoastPortrait',
+
+    // Religious
+    ReligiousPortrait = 'ReligiousPortrait',
+    ReligiousLandscape = 'ReligiousLandscape',
 }
 
 export enum Orientation {
@@ -23,6 +27,7 @@ export enum Orientation {
 export enum Channels {
     CODESTACK = 'CodeStack',
     RED_FLAG_RADAR = 'RedFlagRadar',
+    ALMA_DE_TERREIRO = 'AlmaDeTerreiro',
 }
 
 export const compositionOrientationMap: { [key in Compositions]: Orientation } = {
@@ -31,6 +36,8 @@ export const compositionOrientationMap: { [key in Compositions]: Orientation } =
     [Compositions.DebatePortrait]: Orientation.PORTRAIT,
     [Compositions.DebateLandscape]: Orientation.LANDSCAPE,
     [Compositions.TinderRoast]: Orientation.PORTRAIT,
+    [Compositions.ReligiousPortrait]: Orientation.PORTRAIT,
+    [Compositions.ReligiousLandscape]: Orientation.LANDSCAPE,
 };
 
 export enum ScriptStatus {

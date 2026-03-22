@@ -15,6 +15,8 @@ import { NotionClient } from './clients/notion';
 import { cleanupFiles } from './services/cleanup-files';
 import { generateThumbnails } from './services/generate-thumbnails';
 
+const CHANNELS = [Channels.CODESTACK]
+
 const openai: LLMClient & ImageGeneratorClient & TTSClient = new OpenAIClient();
 const anthropic: LLMClient = new AnthropicClient();
 const gemini: LLMClient & ImageGeneratorClient & TTSClient = new GeminiClient();
@@ -117,7 +119,7 @@ for (const script of scripts) {
 
     script.audio = audios;
 
-    const thumbnails = await generateThumbnails(script.title, script.compositions!)
+    const thumbnails = await generateThumbnails(script.title, script.compositions!, CHANNELS)
 
     const settings = script.compositions?.includes(Compositions.DebateLandscape)
         ? { winner: council.winner }
@@ -127,7 +129,7 @@ for (const script of scripts) {
         script,
         formats: script.compositions,
         settings,
-        channels: [Channels.CODESTACK],
+        channels: CHANNELS,
         thumbnailsSrc: thumbnails
     });
 

@@ -17,6 +17,8 @@ import { generateIllustration } from './services/generate-illustration';
 import { cleanupFiles } from './services/cleanup-files';
 import { generateThumbnails } from './services/generate-thumbnails';
 
+const CHANNELS = [Channels.CODESTACK]
+
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const grok: LLMClient = new GrokClient();
@@ -68,13 +70,15 @@ for (const script of scripts) {
         })
     )
 
-    const thumbnails = script.compositions?.includes(Compositions.Landscape) ? await generateThumbnails(script.title, script.compositions) : [];
+    const thumbnails = script.compositions?.includes(Compositions.Landscape) 
+        ? await generateThumbnails(script.title, script.compositions, CHANNELS) 
+        : [];
         
     await scriptManagerClient.saveScript({
         script,
         scriptSrc: path.basename(scriptTextFile),
         formats: script.compositions,
-        channels: [Channels.CODESTACK],
+        channels: CHANNELS,
         thumbnailsSrc: thumbnails,
     });
 

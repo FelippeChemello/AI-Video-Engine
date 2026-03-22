@@ -42,9 +42,6 @@ export class FishAudioTTSClient implements TTSClient {
             format: 'mp3',
             text,
             reference_id: [voiceId] as any,
-            prosody: {
-                speed: 1.25,
-            }
         })
 
         const speechFile = `audio-${id}.mp3`;

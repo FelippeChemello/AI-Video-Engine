@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import dayjs from 'dayjs';
 import { getVideoDurationInSeconds } from 'get-video-duration';
 
-import { Channels, compositionOrientationMap, Compositions, Orientation, ScriptStatus } from './config/types';
+import { compositionOrientationMap, Compositions, Orientation, ScriptStatus } from './config/types';
 import { outputDir, publicDir } from './config/path';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -25,6 +24,7 @@ import { sanitizeText } from './utils/sanitize-text';
 import { ImageEditorClient } from './clients/interfaces/ImageEditor';
 import { SharpClient } from './clients/sharp';
 import { getPublishDate } from './utils/get-publish-date';
+import { cleanupFiles } from './services/cleanup-files';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
@@ -73,10 +73,15 @@ for (const scriptIndex in scripts) {
         continue;
     }
 
+    if (!script.channels || script.channels.length === 0) {
+        console.log(`Script "${script.title}" does not have any target channels`);
+        continue;
+    }
+
     try {
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.IN_PROGRESS);
 
-        const assets = await defaultScriptManager.retrieveAssets(script.id);
+        const assets = await defaultScriptManager.retrieveAssets(script.channels[0]);
         script.background = assets.background;
 
         script.segments = script.segments.map((segment) => ({
@@ -155,10 +160,8 @@ for (const scriptIndex in scripts) {
 
         await defaultScriptManager.setSEO(script.id, seo);
 
-        if (script.channels?.includes(Channels.CODESTACK)) {
-            console.log('Uploading videos...');
-            
-            for (const video of videos) {
+        for (const video of videos) {
+            for (const channel of script.channels || []) {
                 const thumbnail = script.thumbnails?.find(t => {
                     const thumbOrientation = compositionOrientationMap[video.composition];
                     return t.filename.includes(thumbOrientation);
@@ -173,45 +176,36 @@ for (const scriptIndex in scripts) {
                     notBefore: script.date
                 });
 
-                console.log(`Publishing video with title: ${seo.title} at ${publishDate}...`);
+                console.log(`Publishing video on ${channel} with title: ${seo.title} at ${publishDate}...`);
 
-                const uploadResult = await youtube.uploadVideo(
+                await youtube.uploadVideo(
+                    channel,
                     video.videoPath,
                     seo.title,
                     `${seo.description}\n\n ${seo.hashtags.join(' ')}`,
                     thumbnailFilePath,
                     seo.tags,
                     publishDate
-                );
-
-                console.log(`Video uploaded: ${uploadResult.url}`);
+                ).then(async result => {
+                    console.log(`Video uploaded successfully for script ${script.title} to channel ${channel}: ${result.url}`);
+                    await defaultScriptManager.updateScriptStatus(script.id!, ScriptStatus.PUBLISHED);
+                }).catch(error => {
+                    console.error(`Error uploading video for script ${script.title} to channel ${channel}:`, error)
+                });
             }
-
-            await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.PUBLISHED);
         }
         
         console.log(`Cleaning up assets for script ${script.title}...`);
 
-        for (const audio of script.audio) {
-            const audioFilePath = path.join(publicDir, audio.src);
-            if (fs.existsSync(audioFilePath)) {
-                fs.unlinkSync(audioFilePath);
-            }
-        }
-        
-        const scriptFilePath = path.join(publicDir, scriptFileName);
-        if (fs.existsSync(scriptFilePath)) {
-            fs.unlinkSync(scriptFilePath);
-        }
-        
-        for (const segment of script.segments) {
-            if (segment.mediaSrc) {
-                const mediaFilePath = path.join(publicDir, segment.mediaSrc);
-                if (fs.existsSync(mediaFilePath)) {
-                    fs.unlinkSync(mediaFilePath);
-                }
-            }
-        }
+        const filesToCleanup = [
+            ...script.audio.map(a => path.join(publicDir, a.src)),
+            path.join(publicDir, scriptFileName),
+            ...script.segments
+                .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
+                .filter(Boolean) as Array<string>
+        ];
+
+        cleanupFiles(filesToCleanup);
     } catch (error) {
         console.error(`Error processing script ${script.title}:`, error);
 

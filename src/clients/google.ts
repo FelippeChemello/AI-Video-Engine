@@ -25,6 +25,7 @@ export class Google implements SearcherClient {
       num: 1,
       searchType: 'image',
       fileType: 'jpg,png',
+      excludeTerms: 'site:pinterest.com, site:instagram.com, site:twitter.com, site:facebook.com',
     });
 
     if (!data.items) return { mediaSrc: undefined }

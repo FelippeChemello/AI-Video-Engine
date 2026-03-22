@@ -16,6 +16,7 @@ import { Agent, AgentOutput, Agents, LLMClient } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { convertToWav } from '../utils/save-wav-file';
 import { sleep } from '../utils/sleep';
+import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 
 const genAIPro = new GoogleGenAI({ apiKey: ENV.GEMINI_PAID_API_KEY })
 
@@ -238,7 +239,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
         console.log(`[GEMINI] Generating thumbnail for script: ${videoTitle}`);
 
-        const img = fs.readFileSync(customImage ? customImage.src : path.resolve(publicDir, 'assets', 'felippe.png')).toString('base64')
+        const img = customImage ? fs.readFileSync(customImage.src).toString('base64') : undefined
 
         const imageResult = await genAIPro.models.generateContent({
             model: 'gemini-3.1-flash-image-preview',
@@ -247,8 +248,8 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                 { text: `Video Title: ${videoTitle}` },
                 ...(customImage ? [
                     { text: customImage.prompt },
+                    { inlineData: { mimeType: 'image/png', data: img } }
                 ] : []),
-                { inlineData: { mimeType: 'image/png', data: img } }
             ],
             config: { 
                 thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
@@ -293,7 +294,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         return { mediaSrc }
     }
 
-    async complete<T extends Agent>(agent: T, prompt: string | unknown): Promise<AgentOutput<T>> {
+    async complete<T extends Agent>(agent: T, prompt: string | unknown, filesSrc?: Array<string>): Promise<AgentOutput<T>> {
         console.log(`[GEMINI] Running agent: ${agent}`);
 
         const maxRetries = 10;
@@ -308,9 +309,19 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                     delete jsonSchema.$schema
                 }
 
+                const inputFiles = filesSrc ? filesSrc.map(src => ({
+                    inlineData: {
+                        mimeType: getMimetypeFromFilename(path.basename(src)).mimeType,
+                        data: fs.readFileSync(src).toString('base64')
+                    }
+                })) : []
+
                 const response = await genAIPro.models.generateContent({
                     model: config.model.gemini,
-                    contents: typeof prompt === 'string' ? prompt : JSON.stringify(prompt),
+                    contents: [
+                        { text: typeof prompt === 'string' ? prompt : JSON.stringify(prompt) },
+                        ...inputFiles
+                    ],
                     config: {
                         systemInstruction: config.systemPrompt,
                         responseModalities: ['text'],

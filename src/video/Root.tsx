@@ -10,6 +10,8 @@ import { Portrait } from "./Portrait";
 import { DebatePortrait } from "./DebatePortrait";
 import { DebateLandscape } from "./DebateLandscape";
 import { Tinder } from "./Tinder";
+import { ReligiousPortrait } from "./ReligiousPortrait";
+import { ReligiousLandscape } from "./ReligiousLandscape";
 
 const FPS = 30;
 
@@ -136,6 +138,28 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1080}
         height={1920}
+        schema={videoSchema}
+        defaultProps={defaultProps}
+        calculateMetadata={calculateMetadata}
+      />
+      <Composition
+        id="ReligiousPortrait"
+        component={ReligiousPortrait}
+        durationInFrames={1}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        schema={videoSchema}
+        defaultProps={defaultProps}
+        calculateMetadata={calculateMetadata}
+      />
+      <Composition
+        id="ReligiousLandscape"
+        component={ReligiousLandscape}
+        durationInFrames={1}
+        fps={FPS}
+        width={1920}
+        height={1080}
         schema={videoSchema}
         defaultProps={defaultProps}
         calculateMetadata={calculateMetadata}

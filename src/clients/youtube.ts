@@ -1,7 +1,8 @@
 import fs from 'fs';
 import { google } from 'googleapis';
 import { ENV } from '../config/env';
-import { VideoUploaderClient } from './interfaces/VideoUploader';
+import { channelProviderAuthMap, VideoUploaderClient } from './interfaces/VideoUploader';
+import { Channels } from '../config/types';
 
 export class Youtube implements VideoUploaderClient {
     private auth = new google.auth.OAuth2(
@@ -9,9 +10,9 @@ export class Youtube implements VideoUploaderClient {
         ENV.GOOGLE_CLIENT_SECRET,
     )
     
-    private async authenticate() {
+    private async authenticate(refreshToken: string) {
         this.auth.setCredentials({
-            refresh_token: ENV.YOUTUBE_REFRESH_TOKEN,
+            refresh_token: refreshToken,
         })
 
         const token = await this.auth.refreshAccessToken()
@@ -20,6 +21,7 @@ export class Youtube implements VideoUploaderClient {
     }
 
     async uploadVideo(
+        channel: Channels,
         videoFilePath: string, 
         title: string, 
         description: string, 
@@ -27,8 +29,13 @@ export class Youtube implements VideoUploaderClient {
         tags?: Array<string>,
         scheduledPublishTime?: Date,
     ): Promise<{ url: string }> {
+        const auth = channelProviderAuthMap[channel]?.youtube;
+        if (!auth) {
+            throw new Error(`No YouTube authentication configured for channel: ${channel}`);
+        }
+    
         console.log('[YOUTUBE] Authenticating with YouTube API')
-        await this.authenticate()
+        await this.authenticate(auth)
 
         const youtube = google.youtube({ version: 'v3', auth: this.auth });
 

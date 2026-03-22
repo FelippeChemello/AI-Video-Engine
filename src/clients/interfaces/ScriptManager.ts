@@ -1,4 +1,6 @@
+import path from "path";
 import { BasicScript, Channels, Compositions, ScriptStatus, ScriptWithTitle, SEO, VideoBackground } from "../../config/types";
+import { publicDir } from "../../config/path";
 
 export type SaveScriptParams = {
     script: ScriptWithTitle;
@@ -11,6 +13,24 @@ export type SaveScriptParams = {
     date?: Date;
 };
 
+export const channelAssetsMap: Record<Channels, null | { backgroundPaths: Array<string> }> = {
+    [Channels.CODESTACK]: {
+        backgroundPaths: [
+            path.resolve(publicDir, 'assets', 'city-lights.gif'),
+            path.resolve(publicDir, 'assets', 'tech-tunnel.gif'),
+            path.resolve(publicDir, 'assets', 'wrinkled-paper.gif'),
+        ]
+    },
+    [Channels.RED_FLAG_RADAR]: null,
+    [Channels.ALMA_DE_TERREIRO]: {
+        backgroundPaths: [
+            path.resolve(publicDir, 'assets', 'wrinkled-paper.gif'),
+            path.resolve(publicDir, 'assets', 'river.gif'),
+            path.resolve(publicDir, 'assets', 'river-2.gif'),
+        ]
+    }
+}
+
 export interface ScriptManagerClient {
     saveScript(script: SaveScriptParams): Promise<void>;
     setSEO(
@@ -19,7 +39,7 @@ export interface ScriptManagerClient {
     ): Promise<void>;
     retrieveScript(status: ScriptStatus, limit?: number): Promise<Array<ScriptWithTitle>>;
     updateScriptStatus(scriptId: string, status: ScriptStatus): Promise<void>;
-    retrieveAssets(scriptId: string): Promise<{ background: VideoBackground }>;
+    retrieveAssets(channel: Channels): Promise<{ background: VideoBackground }>;
     downloadAssets(script: ScriptWithTitle): Promise<ScriptWithTitle>;
     downloadOutputOfDoneScripts(): Promise<Array<string>>;
     saveOutput(scriptId: string, output: Array<string>): Promise<void>;

@@ -14,6 +14,7 @@ import { Agents, LLMClient, Agent, AgentOutput } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { zodTextFormat } from 'openai/helpers/zod.mjs';
 import { cleanupFiles } from '../services/cleanup-files';
+import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 
 const openai = new OpenAI({
     apiKey: ENV.OPENAI_API_KEY,
@@ -128,7 +129,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { mediaSrc }
     }
 
-    async generateThumbnail({ 
+    async generateThumbnail({
         videoTitle,
         orientation,
         customImage,
@@ -156,12 +157,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                 ] : [
                     {
                         type: 'input_text',
-                        text: `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
-                    },
-                    {
-                        type: 'input_image',
-                        file_id: ENV.OPENAI_FELIPPE_FILE_ID,
-                        detail: 'low',
+                        text: `Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
                     }
                 ]
             }],
@@ -185,18 +181,29 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         return { mediaSrc }
     }
 
-    async complete<T extends Agent>(agent: T, prompt: string | unknown): Promise<AgentOutput<T>> {
+    async complete<T extends Agent>(agent: T, prompt: string | unknown, filesSrc?: Array<string>): Promise<AgentOutput<T>> {
         console.log(`[OPENAI] Running agent: ${agent}`);
         
         const config = Agents[agent]
 
+        const inputFiles = filesSrc ? filesSrc.map(src => ({
+            type: 'input_file' as const,
+            filename: path.basename(src),
+            file_data: `data:${getMimetypeFromFilename(path.basename(src)).mimeType};base64,${fs.readFileSync(src).toString('base64')}`,
+        })) : []
+
         const response = await openai.responses.parse({
             model: config.model.openai,
             instructions: config.systemPrompt,
-            input: [{
-                role: 'user',
-                content: typeof prompt === 'string' ? prompt : JSON.stringify(prompt),
-            }],
+            input: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'input_text', text: typeof prompt === 'string' ? prompt : JSON.stringify(prompt) },
+                        ...inputFiles
+                    ]
+                },
+            ],
             text: {
                 format: zodTextFormat(config.outputStructure, 'output_parsed'),
             }
