@@ -81,7 +81,7 @@ for (const scriptIndex in scripts) {
     try {
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.IN_PROGRESS);
 
-        const assets = await defaultScriptManager.retrieveAssets(script.channels[0] || null);
+        const assets = await defaultScriptManager.retrieveAssets(script.channels[0]);
         script.background = assets.background;
 
         script.segments = script.segments.map((segment) => ({

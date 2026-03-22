@@ -8,10 +8,11 @@ import { ScriptWithTitle } from "../config/types";
 import { FFmpegClient } from "../clients/ffmpeg";
 import { AudioEditorClient } from "../clients/interfaces/AudioEditor";
 import { FishAudioTTSClient } from "../clients/fishaudio";
+import { OpenAIClient } from "../clients/openai";
 
 const gemini: TTSClient = new GeminiClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
-const openai: TTSClient = new GeminiClient();
+const openai: TTSClient = new OpenAIClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
 export async function synthesizeSpeech(

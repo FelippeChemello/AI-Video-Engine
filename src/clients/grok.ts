@@ -13,7 +13,7 @@ const openai = new OpenAI({
 });
 
 export class GrokClient implements LLMClient {
-    async complete<T extends Agent>(agent: T, prompt: string | unknown, filesSrc: Array<string>): Promise<AgentOutput<T>> {
+    async complete<T extends Agent>(agent: T, prompt: string | unknown, filesSrc?: Array<string>): Promise<AgentOutput<T>> {
         console.log(`[GROK] Running agent: ${agent}`);
 
         const config = Agents[agent];

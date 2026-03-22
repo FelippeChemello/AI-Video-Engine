@@ -1,4 +1,4 @@
-export function getMimetypeFromFilename(filename: string): { mimeType: string; extension: string, type: 'audio' | 'video' | 'image' | 'pdf' } {
+export function getMimetypeFromFilename(filename: string): { mimeType: string; extension: string, type: 'audio' | 'video' | 'image' | 'document' } {
     const extension = filename.split('.').pop()?.toLowerCase();
     if (!extension) {
         throw new Error(`Filename "${filename}" does not have an extension`);
@@ -24,13 +24,13 @@ export function getMimetypeFromFilename(filename: string): { mimeType: string; e
         throw new Error(`Unsupported file type: ${extension}`);
     }
 
-    const type: 'audio' | 'video' | 'image' | 'pdf' = mimeType.startsWith('audio/') 
+    const type: 'audio' | 'video' | 'image' | 'document' = mimeType.startsWith('audio/') 
         ? 'audio' 
         : mimeType.startsWith('video/') 
             ? 'video' 
             : mimeType.startsWith('image/') 
                 ? 'image' 
-                : 'pdf';
+                : 'document';
 
     return { mimeType, extension, type };
 }

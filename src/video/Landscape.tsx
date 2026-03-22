@@ -26,8 +26,6 @@ import { Speaker } from "../clients/interfaces/TTS";
 const { fontFamily } = loadFont();
 
 export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, audio }) => {
-  console.log("@@@")
-  
   const { fps, durationInFrames } = useVideoConfig()
   const frame = useCurrentFrame();
 
