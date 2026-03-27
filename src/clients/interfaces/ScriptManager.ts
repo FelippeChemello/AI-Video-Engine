@@ -24,7 +24,6 @@ export const channelAssetsMap: Record<Channels, null | { backgroundPaths: Array<
     [Channels.RED_FLAG_RADAR]: null,
     [Channels.ALMA_DE_TERREIRO]: {
         backgroundPaths: [
-            path.resolve(publicDir, 'assets', 'wrinkled-paper.gif'),
             path.resolve(publicDir, 'assets', 'river.gif'),
             path.resolve(publicDir, 'assets', 'river-2.gif'),
         ]

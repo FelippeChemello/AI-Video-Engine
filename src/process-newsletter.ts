@@ -21,7 +21,6 @@ import { cleanupFiles } from './services/cleanup-files';
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
-const anthropic: LLMClient = new AnthropicClient();
 const gmail: NewsletterFetcher = new GmailClient();
 
 const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
@@ -34,10 +33,7 @@ const newsletter: { title: string; content: string } = newsletterFile
 console.log(`Writing script based on newsletter ${newsletter.title}...`);
 const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `${newsletter.title}\n\n${newsletter.content}`); 
 
-console.log("Reviewing script...");
-const review = await anthropic.complete(Agent.NEWSLETTER_REVIEWER, scriptText.scripts)
-
-const scripts: ScriptWithTitle | ScriptWithTitle[] = review.scripts as ScriptWithTitle | ScriptWithTitle[];
+const scripts: ScriptWithTitle | ScriptWithTitle[] = scriptText.scripts as ScriptWithTitle | ScriptWithTitle[];
 
 for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
     console.log(`Processing script: ${script.title}`);

@@ -28,7 +28,7 @@ export const channelThumbnailConfig: { [key in Channels]: null | { prompter: (vi
     },
     [Channels.RED_FLAG_RADAR]: null,
     [Channels.ALMA_DE_TERREIRO]: {
-        prompter: (videoTitle: string) => `A imagem de referência é de um umbandista, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
+        prompter: (videoTitle: string) => `A imagem de referência é de um umbandista, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}". Use quantidade minima de texto!!!`,
         imageBaseSrc: path.resolve(publicDir, 'assets', 'umbandista.png'),
     }
 }

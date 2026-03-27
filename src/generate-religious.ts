@@ -67,7 +67,9 @@ for (const script of scripts) {
         })
     );
 
-    const thumbnails = await generateThumbnails(script.title, script.compositions!, CHANNELS);    
+    const thumbnails = script.compositions?.includes(Compositions.ReligiousLandscape)
+        ? await generateThumbnails(topic, script.compositions!, CHANNELS)
+        : undefined;
 
     const audio = await synthesizeSpeech(
         script.segments, 
