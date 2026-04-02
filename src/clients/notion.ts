@@ -14,6 +14,7 @@ import console from 'console';
 import path from 'path';
 import { sleep } from '../utils/sleep';
 import { Speaker } from './interfaces/TTS';
+import { sanitizeText } from '../utils/sanitize-text';
 
 const MAX_FILE_SIZE_SINGLE_PART = 20 * 1024 * 1024; // 20 MB
 const MAX_FILE_SIZE_PART = 10 * 1024 * 1024; // 10 MB
@@ -128,6 +129,8 @@ export class NotionClient implements ScriptManagerClient {
                 imageId = await this.uploadFile(path.join(publicDir, segment.mediaSrc));
             }
 
+            const sanitizedText = sanitizeText(segment.text);
+
             const children: BlockObjectRequest[] = []
             if (imageId) {
                 children.push({
@@ -139,7 +142,7 @@ export class NotionClient implements ScriptManagerClient {
                                 column: { 
                                     children: [{ 
                                         type: 'paragraph', 
-                                        paragraph: { rich_text: [{ type: 'text', text: { content: segment.text } }] } 
+                                        paragraph: { rich_text: [{ type: 'text', text: { content: sanitizedText } }] } 
                                     }] 
                                 }
                             },
@@ -163,7 +166,7 @@ export class NotionClient implements ScriptManagerClient {
                 children.push({
                     type: 'paragraph',
                     paragraph: {
-                        rich_text: [{ type: 'text', text: { content: segment.text } }],
+                        rich_text: [{ type: 'text', text: { content: sanitizedText } }],
                     }
                 })
             }
@@ -173,7 +176,7 @@ export class NotionClient implements ScriptManagerClient {
                 children
             })
 
-            console.log(`[NOTION] Appended block: ${segment.speaker} - ${segment.text.substring(0, 30)}...`);
+            console.log(`[NOTION] Appended block - ${sanitizedText.substring(0, 50)}...`);
         }
     }
 

@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { publicDir } from './config/path';
+import { outputDir, publicDir } from './config/path';
 import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -40,7 +40,7 @@ if (!topic) {
 }
 
 console.log(`Starting research for topic: ${topic} with grounding file: ${groundingFilePath || 'None'}`);
-const research = await grok.complete(Agent.RELIGIOUS_UMBANDA_RESEARCHER, `Tópico: ${topic}`);
+const research = await grok.complete(Agent.RELIGIOUS_UMBANDA_RESEARCHER, `Tópico: ${topic}`, [groundingFilePath]);
 
 console.log("--------------------------")
 console.log("Research:")
@@ -88,9 +88,10 @@ for (const script of scripts) {
 
     cleanupFiles([
         scriptTextFile,
+        ...(thumbnails || []).map(t => path.join(outputDir, t)),
         ...script.audio!.map(a => path.join(publicDir, a.src)),
         ...script.segments
             .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
-            .filter(Boolean) as Array<string>
+            .filter(Boolean) as Array<string>,
     ])
 }

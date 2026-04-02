@@ -103,6 +103,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                 quality: 'medium', 
                 background: 'opaque',
                 model: 'gpt-image-1-mini',
+                size: '1536x1024',
                 ...config,
             }],
         })
