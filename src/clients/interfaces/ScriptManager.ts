@@ -26,6 +26,8 @@ export const channelAssetsMap: Record<Channels, null | { backgroundPaths: Array<
         backgroundPaths: [
             path.resolve(publicDir, 'assets', 'river.gif'),
             path.resolve(publicDir, 'assets', 'river-2.gif'),
+            path.resolve(publicDir, 'assets', 'river-3.gif'),
+            path.resolve(publicDir, 'assets', 'river-4.gif'),
         ]
     }
 }
