@@ -12,7 +12,6 @@ import { generateIllustration } from './services/generate-illustration';
 import { generateThumbnails } from './services/generate-thumbnails';
 import { cleanupFiles } from './services/cleanup-files';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
-import { GrokClient } from './clients/grok';
 import { FishAudioTTSClient } from './clients/fishaudio';
 import { TTSClient } from './clients/interfaces/TTS';
 import { OpenAIClient } from './clients/openai';
@@ -20,7 +19,6 @@ import { GeminiClient } from './clients/gemini';
 
 const CHANNELS = [Channels.ALMA_DE_TERREIRO]
 
-const grok: LLMClient = new GrokClient();
 const openai: TTSClient & LLMClient = new OpenAIClient();
 const gemini: TTSClient = new GeminiClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
@@ -39,17 +37,9 @@ if (!topic) {
     process.exit(1);
 }
 
-console.log(`Starting research for topic: ${topic} with grounding file: ${groundingFilePath || 'None'}`);
-const research = await grok.complete(Agent.RELIGIOUS_UMBANDA_RESEARCHER, `Tópico: ${topic}`, [groundingFilePath]);
-
-console.log("--------------------------")
-console.log("Research:")
-console.log(research.research)
-console.log("--------------------------")
-
 const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
     console.log(`Writing ${composition} script based on research...`);
-    const fullScript = await openai.complete(Agent.RELIGIOUS_UMBANDA_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`);
+    const fullScript = await openai.complete(Agent.RELIGIOUS_UMBANDA_WRITER, `Tópico: ${topic}\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo:\n\n. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`, [groundingFilePath]);
 
     return fullScript.scripts.map(script => ({
         ...script,

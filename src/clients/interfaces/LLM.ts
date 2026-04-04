@@ -21,7 +21,6 @@ export enum Agent {
 
     TINDER_ROAST = 'TINDER_ROAST',
 
-    RELIGIOUS_UMBANDA_RESEARCHER = 'RELIGIOUS_UMBANDA_RESEARCHER',
     RELIGIOUS_UMBANDA_WRITER = 'RELIGIOUS_UMBANDA_WRITER',
 }
 
@@ -247,18 +246,6 @@ export const Agents = {
             reasoning: z.string(),
             ending: z.string(),
         })
-    },
-    RELIGIOUS_UMBANDA_RESEARCHER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-researcher.md'), 'utf-8'),
-        model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
-        },
-        outputStructure: z.object({
-            research: z.string(),
-        }),
     },
     RELIGIOUS_UMBANDA_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-writer.md'), 'utf-8'),
