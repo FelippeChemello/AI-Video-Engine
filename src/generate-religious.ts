@@ -64,7 +64,6 @@ for (const script of scripts) {
     const audio = await synthesizeSpeech(
         script.segments, 
         script.compositions?.includes(Compositions.ReligiousPortrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined,
-        [fishaudio, gemini, openai]
     );
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 

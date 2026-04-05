@@ -21,8 +21,8 @@ const envSchema = z.object({
     MFA_BASE_URL: z.string(),
     MFA_API_KEY: z.string(),
 
-    VIBEVOICE_BASE_URL: z.string(),
-    VIBEVOICE_API_KEY: z.string(),
+    QWEN_TTS_BASE_URL: z.string(),
+    QWEN_TTS_API_KEY: z.string(),
     
     OPENAI_API_KEY: z.string(),
     OPENAI_FELIPPE_FILE_ID: z.string(),
