@@ -84,7 +84,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         console.log(`[OPENAI] Generating image with prompt: ${prompt}`);
 
         const response = await openai.responses.create({
-            model: 'gpt-4.1-mini',
+            model: 'gpt-5.4',
             input: baseImageSrc 
                 ? [{ 
                     role: 'user', 
@@ -100,10 +100,11 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                 : prompt,
             tools: [{ 
                 type: 'image_generation', 
-                quality: 'medium', 
+                quality: 'low', 
                 background: 'opaque',
-                model: 'gpt-image-1-mini',
-                size: '1536x1024',
+                model: 'gpt-image-2',
+                // @ts-expect-error the OpenAI client types are not up to date with the latest API changes
+                size: '960x720',
                 ...config,
             }],
         })
@@ -138,8 +139,9 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle}`);
         
+        // @ts-expect-error the OpenAI client types are not up to date with the latest API changes, and the responses.create method does not allow for the tools parameter yet, but it is required for image generation
         const response = await openai.responses.create({
-            model: 'gpt-4.1',
+            model: 'gpt-5.4',
             input: [{
                 role: 'system',
                 content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
@@ -153,7 +155,6 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                     {
                         type: 'input_image',
                         image_url: `data:image/png;base64,${fs.readFileSync(customImage.src).toString('base64')}`,
-                        detail: 'low',
                     }
                 ] : [
                     {
@@ -162,7 +163,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                     }
                 ]
             }],
-            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', input_fidelity: 'low', output_format: 'png', size: orientation === Orientation.PORTRAIT ? '1024x1536' : '1536x1024', model: 'gpt-image-1.5' }],
+            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', output_format: 'png', size: orientation === Orientation.PORTRAIT ? '720x1280' : '1280x720', model: 'gpt-image-2' }],
         })
 
         const imageData = response.output.find(out => out.type === 'image_generation_call');

@@ -29,7 +29,7 @@ type Script = {
 }
 ```
 
-The text may contain some effects, to increase the engagement of the audience, such as: [happy], [sad], [angry], [excited], [calm], [nervous], [confident], [surprised], [satisfied], [delighted], [scared], [worried], [upset], [frustrated], [depressed], [empathetic], [embarrassed], [disgusted], [moved], [proud], [relaxed], [grateful], [curious]. Use only when it adds significant value to the content and helps to convey the emotions or tone of the message effectively. Do not overuse these effects, as they can become distracting if used excessively. Always ensure that the effects enhance the storytelling and engagement of the audience without overshadowing the core message. You can create other effects or modifiers as needed, but always prioritize clarity and engagement in your storytelling.
+The text may contain some effects, to increase the engagement of the audience, such as: [happy], [sad], [angry], [excited], [calm], [nervous], [confident], [surprised], [satisfied], [delighted], [scared], [worried], [upset], [frustrated], [depressed], [embarrassed], [disgusted], [moved], [proud], [relaxed], [grateful], [curious]. Use only when it adds significant value to the content and helps to convey the emotions or tone of the message effectively. Do not overuse these effects, as they can become distracting if used excessively. Always ensure that the effects enhance the storytelling and engagement of the audience without overshadowing the core message. You can create other effects or modifiers as needed, but always prioritize clarity and engagement in your storytelling.
 
 <attention>
 - Provide a valid JSON without trailing commas, and ensure that the JSON is well-formed and valid.

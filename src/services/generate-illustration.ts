@@ -1,3 +1,4 @@
+import { GeminiClient } from "../clients/gemini";
 import { Google } from "../clients/google";
 import { CodeRendererClient } from "../clients/interfaces/CodeRenderer";
 import { ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
@@ -11,9 +12,12 @@ import { ScriptWithTitle } from "../config/types";
 import { sanitizeText } from "../utils/sanitize-text";
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
+const gemini: ImageGeneratorClient = new GeminiClient();
 const mermaid: MermaidRendererClient = new Mermaid();
 const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
+
+const imageGenerationEngines: Array<ImageGeneratorClient> = [gemini, openai];
 
 export async function generateIllustration(
     segment: ScriptWithTitle["segments"][0],
@@ -63,11 +67,26 @@ export async function generateIllustration(
             case "image_generation":
             default:
                 console.log("Generating image");
-                const mediaGenerated = await openai.generate({
-                    prompt: segment.illustration.description,
-                });
-
-                mediaSrc = mediaGenerated.mediaSrc;
+                for (const engine of imageGenerationEngines) {
+                    try {
+                        const result = await engine.generate({
+                            prompt: segment.illustration.description,
+                        })
+                        if (result.mediaSrc) {
+                            mediaSrc = result.mediaSrc;
+                            console.log(
+                                `Image generated successfully with ${engine.constructor.name}`,
+                            );
+                            break;
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Error generating image with ${engine.constructor.name}:`,
+                            error,
+                        );
+                    }
+                }
+                
                 break;
         }
     } catch (error) {

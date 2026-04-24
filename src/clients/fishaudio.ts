@@ -8,6 +8,7 @@ import { publicDir } from '../config/path';
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { cleanupFiles } from '../services/cleanup-files';
 import { concatAudioFiles } from '../utils/concat-audio-files';
+import { sanitizeText } from '../utils/sanitize-text';
 
 const fishAudio = new FishAudioClient({ apiKey: ENV.FISH_AUDIO_API_KEY })
 
@@ -20,7 +21,7 @@ export class FishAudioTTSClient implements TTSClient {
 
         const individualAudioFiles: string[] = [];
         for (const segment of script) {
-            const { audioFileName } = await this.synthesize(segment.speaker, segment.text);
+            const { audioFileName } = await this.synthesize(segment.speaker, sanitizeText(segment.text));
             individualAudioFiles.push(path.join(publicDir, audioFileName));
         }
 

@@ -1,37 +1,67 @@
 import { GeminiClient } from "../clients/gemini";
-import { channelThumbnailConfig, ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
-import { Channels, compositionOrientationMap, Compositions } from "../config/types";
+import {
+    channelThumbnailConfig,
+    ImageGeneratorClient,
+} from "../clients/interfaces/ImageGenerator";
+import { OpenAIClient } from "../clients/openai";
+import {
+    Channels,
+    compositionOrientationMap,
+    Compositions,
+} from "../config/types";
 
 const gemini: ImageGeneratorClient = new GeminiClient();
+const openai: ImageGeneratorClient = new OpenAIClient();
 
-export async function generateThumbnails(title: string, compositions: Array<Compositions>, channels: Array<Channels>): Promise<Array<string>> {
-    const thumbnailsPromises = []
+export async function generateThumbnails(
+    title: string,
+    compositions: Array<Compositions>,
+    channels: Array<Channels>,
+    engines: Array<ImageGeneratorClient> = [openai, gemini],
+): Promise<Array<string>> {
+    const thumbnails: Array<string | undefined> = [];
 
     for (const composition of compositions) {
         for (const channel of channels) {
-            const { prompter, imageBaseSrc } = channelThumbnailConfig[channel] || {};
+            const { prompter, imageBaseSrc } =
+                channelThumbnailConfig[channel] || {};
 
             const prompt = prompter ? prompter(title) : undefined;
+            const options = {
+                videoTitle: title,
+                orientation: compositionOrientationMap[composition],
+                customImage:
+                    imageBaseSrc && prompt
+                        ? {
+                              prompt,
+                              src: imageBaseSrc,
+                          }
+                        : undefined,
+            };
 
-            thumbnailsPromises.push(
-                gemini.generateThumbnail({
-                    videoTitle: title,
-                    orientation: compositionOrientationMap[composition],
-                    customImage: imageBaseSrc && prompt ? {
-                        prompt,
-                        src: imageBaseSrc,
-                    } : undefined,
-                })
-                .then(({ mediaSrc }) => mediaSrc)
-                .catch((err) => {
-                    console.error(`Error generating thumbnail for composition ${composition} and channel ${channel}:`, err);
-                    return null; 
-                })
-            )
+            let thumbnail: string | undefined;
+            for (const engine of engines) {
+                try {
+                    const result = await engine.generateThumbnail(options);
+                    if (result.mediaSrc) {
+                        thumbnail = result.mediaSrc;
+                        console.log(
+                            `Thumbnail generated successfully with ${engine.constructor.name} for composition ${composition} and channel ${channel}`,
+                        );
+                        break;
+                    }
+                } catch (error) {
+                    console.error(
+                        `Error generating thumbnail with ${engine.constructor.name} for composition ${composition} and channel ${channel}:`,
+                        error,
+                    );
+                }
+            }
+
+            thumbnails.push(thumbnail);
         }
     }
 
-    const thumbnails = await Promise.all(thumbnailsPromises);
 
     return thumbnails.filter(Boolean) as Array<string>;
 }
