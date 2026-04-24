@@ -26,6 +26,10 @@ const envSchema = z.object({
     
     OPENAI_API_KEY: z.string(),
     OPENAI_FELIPPE_FILE_ID: z.string(),
+    
+    CODEX_CLIENT_ID: z.string().default("app_EMoamEEZ73f0CkXaXp7hrann"), // This is the ChatGPT client ID, which is used for Codex features - https://github.com/SamSaffron/term-llm/blob/main/internal/oauth/chatgpt.go#L23
+    CODEX_ACCOUNT_ID: z.string(),
+    CODEX_REFRESH_TOKEN: z.string(),
 
     ANTHROPIC_API_KEY: z.string(),
 

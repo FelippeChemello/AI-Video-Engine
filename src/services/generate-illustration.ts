@@ -1,3 +1,4 @@
+import { CodexClient } from "../clients/codex";
 import { GeminiClient } from "../clients/gemini";
 import { Google } from "../clients/google";
 import { CodeRendererClient } from "../clients/interfaces/CodeRenderer";
@@ -13,11 +14,12 @@ import { sanitizeText } from "../utils/sanitize-text";
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const gemini: ImageGeneratorClient = new GeminiClient();
+const codex: LLMClient & ImageGeneratorClient = new CodexClient();
 const mermaid: MermaidRendererClient = new Mermaid();
 const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
 
-const imageGenerationEngines: Array<ImageGeneratorClient> = [gemini, openai];
+const imageGenerationEngines: Array<ImageGeneratorClient> = [codex, gemini, openai];
 
 export async function generateIllustration(
     segment: ScriptWithTitle["segments"][0],

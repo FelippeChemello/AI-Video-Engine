@@ -1,3 +1,4 @@
+import { CodexClient } from "../clients/codex";
 import { GeminiClient } from "../clients/gemini";
 import {
     channelThumbnailConfig,
@@ -10,6 +11,7 @@ import {
     Compositions,
 } from "../config/types";
 
+const codex: ImageGeneratorClient = new CodexClient();
 const gemini: ImageGeneratorClient = new GeminiClient();
 const openai: ImageGeneratorClient = new OpenAIClient();
 
@@ -17,7 +19,7 @@ export async function generateThumbnails(
     title: string,
     compositions: Array<Compositions>,
     channels: Array<Channels>,
-    engines: Array<ImageGeneratorClient> = [openai, gemini],
+    engines: Array<ImageGeneratorClient> = [codex, openai, gemini],
 ): Promise<Array<string>> {
     const thumbnails: Array<string | undefined> = [];
 

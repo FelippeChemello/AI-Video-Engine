@@ -10,7 +10,7 @@ import { TTSClient, voices, Speaker } from './interfaces/TTS';
 import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
-import { Agents, LLMClient, Agent, AgentOutput } from './interfaces/LLM';
+import { Agents, LLMClient, Agent, AgentOutput, OPENAI_DEFAULT_MODEL } from './interfaces/LLM';
 import { titleToFileName } from '../utils/title-to-filename';
 import { zodTextFormat } from 'openai/helpers/zod.mjs';
 import { cleanupFiles } from '../services/cleanup-files';
@@ -84,7 +84,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         console.log(`[OPENAI] Generating image with prompt: ${prompt}`);
 
         const response = await openai.responses.create({
-            model: 'gpt-5.4',
+            model: OPENAI_DEFAULT_MODEL,
             input: baseImageSrc 
                 ? [{ 
                     role: 'user', 
@@ -141,7 +141,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         
         // @ts-expect-error the OpenAI client types are not up to date with the latest API changes, and the responses.create method does not allow for the tools parameter yet, but it is required for image generation
         const response = await openai.responses.create({
-            model: 'gpt-5.4',
+            model: OPENAI_DEFAULT_MODEL,
             input: [{
                 role: 'system',
                 content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
