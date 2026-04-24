@@ -37,14 +37,19 @@ type AgentConfig = {
     outputStructure: z.ZodTypeAny;
 }
 
+const OPENAI_DEFAULT_MODEL = 'gpt-5.5';
+const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5';
+const GEMINI_DEFAULT_MODEL = 'gemini-3.1-pro-preview';
+const GROK_DEFAULT_MODEL = 'grok-4-1-fast';
+
 export const Agents = {
     RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             research: z.string(),
@@ -53,10 +58,10 @@ export const Agents = {
     NEWS_RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             news: z.array(z.object({
@@ -69,10 +74,10 @@ export const Agents = {
     NEWSLETTER_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -91,10 +96,10 @@ export const Agents = {
     SCRIPT_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -113,8 +118,8 @@ export const Agents = {
     TINDER_ROAST: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'tinder-roasting-story-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-5',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
             [ModelProvider.GEMINI]: 'gemini-2.5-flash',
             [ModelProvider.GROK]: 'grok-4.20',
         },
@@ -152,10 +157,10 @@ export const Agents = {
     SCRIPT_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -174,10 +179,10 @@ export const Agents = {
     NEWSLETTER_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -196,10 +201,10 @@ export const Agents = {
     SEO_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'seo.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             title: z.string(),
@@ -211,10 +216,10 @@ export const Agents = {
     MERMAID_GENERATOR: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'mermaid-generator.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             mermaid: z.string(),
@@ -223,10 +228,10 @@ export const Agents = {
     DEBATE: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-haiku-4-5',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             position: z.string(),
@@ -235,10 +240,10 @@ export const Agents = {
     DEBATE_COUNCIL: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate-council.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             title: z.string(),
@@ -250,10 +255,10 @@ export const Agents = {
     RELIGIOUS_UMBANDA_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: 'gpt-5.4',
-            [ModelProvider.ANTHROPIC]: 'claude-sonnet-4-6',
-            [ModelProvider.GEMINI]: 'gemini-3.1-pro-preview',
-            [ModelProvider.GROK]: 'grok-4.20',
+            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({

@@ -7,6 +7,7 @@ import { getAudioDurationInSeconds } from "get-audio-duration";
 import { Speaker, TTSClient, voices as voicesMap } from './interfaces/TTS';
 import path from 'path';
 import { publicDir } from '../config/path';
+import { sanitizeText } from '../utils/sanitize-text';
 
 export class QwenClient implements TTSClient {
     async synthesize(voice: Speaker, text: string, id?: string | number): Promise<{ audioFileName: string; duration?: number; }> {
@@ -24,7 +25,7 @@ export class QwenClient implements TTSClient {
             },
             body: JSON.stringify({
                 synthesize: script.map(segment => ({
-                    text: segment.text,
+                    text: sanitizeText(segment.text),
                     voice: voicesMap[segment.speaker].qwen_tts
                 })),
             }),

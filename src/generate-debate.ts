@@ -1,19 +1,22 @@
-import fs from 'fs';
 import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
-import { AudioScript, Channels, Compositions, Script, ScriptWithTitle } from './config/types';
+import { Channels, Compositions, Script, ScriptWithTitle } from './config/types';
 import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
 import { Agent, LLMClient } from "./clients/interfaces/LLM";
 import { OpenAIClient } from "./clients/openai";
 import { AnthropicClient } from "./clients/anthropic";
 import { GeminiClient } from "./clients/gemini";
-import { Speaker, SynthesizedAudio, TTSClient } from './clients/interfaces/TTS';
+import { Speaker, TTSClient } from './clients/interfaces/TTS';
 import { GrokClient } from './clients/grok';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { cleanupFiles } from './services/cleanup-files';
 import { generateThumbnails } from './services/generate-thumbnails';
+import { saveScriptFile } from './services/save-script-file';
+import { titleToFileName } from './utils/title-to-filename';
+import { synthesizeSpeech } from './services/synthesize-speech';
+import { sanitizeText } from './utils/sanitize-text';
 
 const CHANNELS = [Channels.CODESTACK]
 
@@ -54,8 +57,7 @@ for (const topicIndex in topics) {
         gemini.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Gemini recusou-se a responder." })),
         grok.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
         openai.generate({
-          prompt: `Uma ilustração detalhada que represente um debate sobre o tópico: "${topic}" - A imagem não deve conter background`,
-          id: `${topicIndex}-illustration`,
+          prompt: `Uma ilustração detalhada em estilo moderno que represente um debate sobre o tópico: "${topic}" - A imagem não deve conter background nem nenhum tipo de texto, apenas elementos visuais que representem o tema do debate de forma criativa e simbólica.`,
           config: { background: 'transparent' }
         }),
     ]);
@@ -70,7 +72,7 @@ for (const topicIndex in topics) {
     });
 }
 
-const council = await anthropic.complete(Agent.DEBATE_COUNCIL, positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n'))
+const council = await gemini.complete(Agent.DEBATE_COUNCIL, positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n'))
 
 const topicsScripted: Script[] = positions.map(p => ([
     { speaker: Speaker.Narrator, text: `[Narrator] ${p.topic}`, mediaSrc: p.illustration },
@@ -98,28 +100,18 @@ const scriptPortrait: ScriptWithTitle[] = topicsScripted.map((topicScript, index
 
 const scripts: ScriptWithTitle[] = [...scriptPortrait, scriptLandscape];
 
-const scriptsFilePath = path.join(outputDir, 'script-debate.json');
-fs.writeFileSync(scriptsFilePath, JSON.stringify(scripts, null, 2));
-
 for (const script of scripts) {
     console.log(`Saving script: ${script.title}`);
+    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
-    const removeSpeakerTagRegex = /^\[\w+\]\s*/gi;
-    const audios: Array<AudioScript> = []
-    
-    for (const segmentIndex in script.segments) {
-        const segment = script.segments[segmentIndex];
-        const sanitizedText = segment.text.replace(removeSpeakerTagRegex, '');
+    const audio = await synthesizeSpeech(script.segments);
+    script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
-        console.log(`Synthesizing ${segment.speaker} voice`)
-        const tts: SynthesizedAudio = await openai.synthesize(segment.speaker, sanitizedText, segmentIndex);
-
-        audios.push({ src: tts.audioFileName, duration: tts.duration })
-    }
-
-    script.audio = audios;
-
-    const thumbnails = await generateThumbnails(script.title, script.compositions!, CHANNELS)
+    const thumbnails = await generateThumbnails(
+        script.compositions?.includes(Compositions.DebatePortrait) ? sanitizeText(script.segments[0].text) : script.title,
+        script.compositions!, 
+        CHANNELS
+    )
 
     const settings = script.compositions?.includes(Compositions.DebateLandscape)
         ? { winner: council.winner }
@@ -130,20 +122,16 @@ for (const script of scripts) {
         formats: script.compositions,
         settings,
         channels: CHANNELS,
-        thumbnailsSrc: thumbnails
-    });
-
-    const uniqueMediaFiles = new Set<string>();
-    script.segments.forEach(s => {
-        if (s.mediaSrc) {
-            uniqueMediaFiles.add(path.join(publicDir, s.mediaSrc));
-        }
+        thumbnailsSrc: thumbnails,
+        scriptSrc: path.basename(scriptTextFile)
     });
 
     cleanupFiles([
-        ...uniqueMediaFiles,
-        ...audios.map(a => path.join(publicDir, a.src)),
+        ...script.audio!.map(a => path.join(publicDir, a.src)),
         ...thumbnails.map(t => path.join(outputDir, t)),
-        scriptsFilePath
+        scriptTextFile
     ])
 }
+
+const uniqueImages = Array.from(new Set(positions.map(p => p.illustration)));
+cleanupFiles(uniqueImages.map(img => path.join(publicDir, img)));

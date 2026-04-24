@@ -20,7 +20,7 @@ const editor: AudioEditorClient = new FFmpegClient();
 export async function synthesizeSpeech(
     segments: ScriptWithTitle['segments'], 
     maxDurationInSeconds?: number,
-    engines: Array<TTSClient> = [qwen, gemini, fishaudio, openai]
+    engines: Array<TTSClient> = [qwen, fishaudio, gemini, openai]
 ): Promise<{ audioFileName: string, duration?: number }> {
     let audio: SynthesizedAudio | undefined;
     for (const engine of engines) {

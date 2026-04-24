@@ -39,7 +39,7 @@ if (!topic) {
 
 const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
     console.log(`Writing ${composition} script based on research...`);
-    const fullScript = await openai.complete(Agent.RELIGIOUS_UMBANDA_WRITER, `Tópico: ${topic}\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo:\n\n. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`, [groundingFilePath]);
+    const fullScript = await openai.complete(Agent.RELIGIOUS_UMBANDA_WRITER, `Tópico: ${topic}\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo, porém nunca referencie o mesmo, seu roteiro deve ser autoral sem referências a documentos externos!\n\n. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`, [groundingFilePath]);
 
     return fullScript.scripts.map(script => ({
         ...script,

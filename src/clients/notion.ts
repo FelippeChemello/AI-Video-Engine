@@ -129,7 +129,6 @@ export class NotionClient implements ScriptManagerClient {
                 imageId = await this.uploadFile(path.join(publicDir, segment.mediaSrc));
             }
 
-            const sanitizedText = sanitizeText(segment.text);
 
             const children: BlockObjectRequest[] = []
             if (imageId) {
@@ -142,7 +141,7 @@ export class NotionClient implements ScriptManagerClient {
                                 column: { 
                                     children: [{ 
                                         type: 'paragraph', 
-                                        paragraph: { rich_text: [{ type: 'text', text: { content: sanitizedText } }] } 
+                                        paragraph: { rich_text: [{ type: 'text', text: { content: segment.text } }] }
                                     }] 
                                 }
                             },
@@ -166,7 +165,7 @@ export class NotionClient implements ScriptManagerClient {
                 children.push({
                     type: 'paragraph',
                     paragraph: {
-                        rich_text: [{ type: 'text', text: { content: sanitizedText } }],
+                        rich_text: [{ type: 'text', text: { content: segment.text } }],
                     }
                 })
             }
@@ -176,7 +175,7 @@ export class NotionClient implements ScriptManagerClient {
                 children
             })
 
-            console.log(`[NOTION] Appended block - ${sanitizedText.substring(0, 50)}...`);
+            console.log(`[NOTION] Appended block - ${segment.text.substring(0, 50)}...`);
         }
     }
 
@@ -369,7 +368,7 @@ export class NotionClient implements ScriptManagerClient {
                             }
                         }
                         
-                        segments.push({ text: rawText, speaker: lastSpeaker });
+                        segments.push({ text: sanitizeText(rawText), speaker: lastSpeaker });
                         break;
 
                     case 'column_list':
@@ -384,7 +383,7 @@ export class NotionClient implements ScriptManagerClient {
                             }
                         }
 
-                        segments.push({ speaker: lastSpeaker, text, mediaSrc });
+                        segments.push({ speaker: lastSpeaker, text: sanitizeText(text), mediaSrc });
                         break;
                 }
 
@@ -403,7 +402,6 @@ export class NotionClient implements ScriptManagerClient {
                 }
             })
 
-            
             scripts.push({ 
                 id: page.id,
                 title, 
