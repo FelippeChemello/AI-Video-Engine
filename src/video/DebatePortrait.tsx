@@ -66,7 +66,8 @@ export const DebatePortrait: React.FC<z.infer<typeof videoSchema>> = ({ segments
 
             <AbsoluteFill className="w-fit h-fit pointer-events-none bottom-72 top-[unset] mx-auto">
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={speaker}
                 size={256}
               />

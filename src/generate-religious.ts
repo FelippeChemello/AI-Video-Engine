@@ -12,16 +12,12 @@ import { generateIllustration } from './services/generate-illustration';
 import { generateThumbnails } from './services/generate-thumbnails';
 import { cleanupFiles } from './services/cleanup-files';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
-import { FishAudioTTSClient } from './clients/fishaudio';
 import { TTSClient } from './clients/interfaces/TTS';
 import { OpenAIClient } from './clients/openai';
-import { GeminiClient } from './clients/gemini';
 
 const CHANNELS = [Channels.ALMA_DE_TERREIRO]
 
 const openai: TTSClient & LLMClient = new OpenAIClient();
-const gemini: TTSClient = new GeminiClient();
-const fishaudio: TTSClient = new FishAudioTTSClient();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
 const ENABLED_FORMATS: Array<Compositions> = [Compositions.ReligiousPortrait, Compositions.ReligiousLandscape];

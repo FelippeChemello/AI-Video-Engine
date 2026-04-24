@@ -77,8 +77,8 @@ const council = await gemini.complete(Agent.DEBATE_COUNCIL, positions.map(p => `
 const topicsScripted: Script[] = positions.map(p => ([
     { speaker: Speaker.Narrator, text: `[Narrator] ${p.topic}`, mediaSrc: p.illustration },
     { speaker: Speaker.ChatGPT, text: `[ChatGPT] ${p.openai}`, mediaSrc: p.illustration },
-    { speaker: Speaker.Grok, text: `[Grok] ${p.grok}`, mediaSrc: p.illustration },
     { speaker: Speaker.Claude, text: `[Claude] ${p.anthropic}`, mediaSrc: p.illustration },
+    { speaker: Speaker.Grok, text: `[Grok] ${p.grok}`, mediaSrc: p.illustration },
     { speaker: Speaker.Gemini, text: `[Gemini] ${p.gemini}`, mediaSrc: p.illustration }
 ]))
 

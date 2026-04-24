@@ -42,7 +42,8 @@ export const DebateLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segment
                 <>
                   <AbsoluteFill className="flex justify-center items-center z-10 h-2/3">
                     <VisualizeAudio
-                      audioSrc={staticFile(audio[index].src)}
+                      audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                       speaker={settings.winner ? settings.winner : Speaker.Narrator}
                       size={384}
                       muted={settings.winner ? settings.winner !== speaker : false}
@@ -53,7 +54,8 @@ export const DebateLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segment
                   <AbsoluteFill className="flex flex-row justify-evenly items-center pb-16 top-[unset] h-1/3">
                     <div className="w-[30%] h-1/3 pl-16 flex justify-center items-center">
                       <VisualizeAudio
-                        audioSrc={staticFile(audio[index].src)}
+                        audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                         speaker={Speaker.Narrator}
                         size={256}
                       />
@@ -77,7 +79,8 @@ export const DebateLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segment
                 <AbsoluteFill className="flex flex-col justify-evenly items-center pb-16 top-[unset]">
                   <div className="w-[30%] h-1/3 pl-16 flex justify-center items-center">
                     <VisualizeAudio
-                      audioSrc={staticFile(audio[index].src)}
+                      audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                       speaker={Speaker.Narrator}
                       size={256}
                     />
@@ -136,31 +139,36 @@ export const DebateLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segment
 
             <AbsoluteFill className="mx-16 justify-evenly w-fit">
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={Speaker.ChatGPT}
                 muted={speaker !== Speaker.ChatGPT}
                 size={128}
               />
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={Speaker.Claude}
                 muted={speaker !== Speaker.Claude}
                 size={128}
               />
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={Speaker.Narrator}
                 muted={speaker !== Speaker.Narrator}
                 size={128}
               />
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={Speaker.Grok}
                 muted={speaker !== Speaker.Grok}
                 size={128}
               />
               <VisualizeAudio
-                audioSrc={staticFile(audio[index].src)}
+                audioSrc={staticFile(audio.length === 1 ? audio[0].src : audio[index].src)}
+                        startFrom={audio.length === 1 ? Math.floor(start * fps) : 0}
                 speaker={Speaker.Gemini}
                 muted={speaker !== Speaker.Gemini}
                 size={128}

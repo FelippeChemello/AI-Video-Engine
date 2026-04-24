@@ -12,6 +12,8 @@ export const speakerMap: Record<Speaker, { color: string, icon: string }> = {
   Gemini: { color: "#4285f4", icon: "assets/gemini.png" },
   Grok: { color: "#2f0d68", icon: "assets/grok.png" },
   Narrator: { color: "#00a6f4", icon: "assets/felippe.png" },
+  Roaster: { color: "#e11d48", icon: "assets/grok.png" },
+  Priest: { color: "#d97706", icon: "assets/umbandista.png" },
 }
 
 export const VisualizeAudio: React.FC<{
@@ -20,12 +22,14 @@ export const VisualizeAudio: React.FC<{
   size: number
   muted?: boolean
   winner?: boolean
+  startFrom?: number
 }> = ({
   audioSrc,
   speaker,
   size,
   muted = false,
   winner = false,
+  startFrom = 0,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -37,12 +41,12 @@ export const VisualizeAudio: React.FC<{
 
   const speakerInfo = speakerMap[speaker];
   const visualization = !muted 
-    ? visualizeAudioWaveform({ audioData, frame, fps, numberOfSamples: size, windowInSeconds: 1 / fps })
+    ? visualizeAudioWaveform({ audioData, frame: frame + startFrom, fps, numberOfSamples: size, windowInSeconds: 1 / fps })
     : [...Array(size).fill(0)];
 
   return (
     <>
-      <Audio src={audioSrc} muted={muted} />
+      <Audio src={audioSrc} muted={muted} trimBefore={startFrom} />
       
       <div 
         className="relative flex items-center justify-center overflow-visible bg-transparent"
