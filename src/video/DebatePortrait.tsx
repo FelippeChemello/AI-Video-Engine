@@ -41,9 +41,9 @@ export const DebatePortrait: React.FC<z.infer<typeof videoSchema>> = ({
             ) : null}
 
             {(background.video?.src || background.gif?.src) && (
-                <div className="absolute inset-0 bg-black/60" />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
             )}
-            
+
             {segments.map((segment, index) => {
                 const { duration, alignment, speaker } = segment;
                 const start = segments
