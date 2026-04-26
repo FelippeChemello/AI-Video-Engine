@@ -9,7 +9,6 @@ import { SearcherClient } from "../clients/interfaces/Searcher";
 import { Mermaid } from "../clients/mermaid";
 import { OpenAIClient } from "../clients/openai";
 import { Shiki } from "../clients/shiki";
-import { ScriptWithTitle } from "../config/types";
 import { sanitizeText } from "../utils/sanitize-text";
 
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
@@ -21,20 +20,28 @@ const google: SearcherClient = new Google();
 
 const imageGenerationEngines: Array<ImageGeneratorClient> = [codex, gemini, openai];
 
-export async function generateIllustration(
-    segment: ScriptWithTitle["segments"][0],
-): Promise<string | undefined> {
-    if (!segment.illustration) return undefined;
+type IllustrationRequest = {
+    type: "mermaid" | "query" | "code" | "image_generation";
+    description: string;
+    context?: string;
+    imageSrc?: string; // Optional base image source for image generation
+}
 
+export async function generateIllustration({
+    type,
+    description,
+    context = "No additional context provided.",
+    imageSrc
+}: IllustrationRequest): Promise<string | undefined> {
     let mediaSrc: string | undefined;
     try {
-        switch (segment.illustration.type) {
+        switch (type) {
             case "mermaid":
                 console.log("Generating mermaid");
 
                 const mermaidCode = await openai.complete(
                     Agent.MERMAID_GENERATOR,
-                    `Specification: ${segment.illustration.description} \n\nContext: ${sanitizeText(segment.text)}`,
+                    `Specification: ${description} \n\nContext: ${sanitizeText(context)}`,
                 );
                 const exportedMermaid = await mermaid
                     .exportMermaid(mermaidCode.mermaid)
@@ -49,9 +56,7 @@ export async function generateIllustration(
             case "query":
                 console.log("Searching for image");
 
-                const imageSearched = await google.searchImage(
-                    segment.illustration.description,
-                );
+                const imageSearched = await google.searchImage(description);
 
                 mediaSrc = imageSearched.mediaSrc;
                 break;
@@ -59,9 +64,7 @@ export async function generateIllustration(
             case "code":
                 console.log("Generating code");
 
-                const codeGenerated = await shiki.exportCode(
-                    segment.illustration.description,
-                );
+                const codeGenerated = await shiki.exportCode(description);
 
                 mediaSrc = codeGenerated.mediaSrc;
                 break;
@@ -71,9 +74,7 @@ export async function generateIllustration(
                 console.log("Generating image");
                 for (const engine of imageGenerationEngines) {
                     try {
-                        const result = await engine.generate({
-                            prompt: segment.illustration.description,
-                        })
+                        const result = await engine.generate({ prompt: description, baseImageSrc: imageSrc });
                         if (result.mediaSrc) {
                             mediaSrc = result.mediaSrc;
                             console.log(

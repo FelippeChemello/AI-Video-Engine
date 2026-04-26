@@ -5,19 +5,17 @@ import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { titleToFileName } from './utils/title-to-filename';
-import { Agent, LLMClient } from "./clients/interfaces/LLM";
+import { Agent } from "./clients/interfaces/LLM";
 import { saveScriptFile } from './services/save-script-file';
 import { synthesizeSpeech } from './services/synthesize-speech';
 import { generateIllustration } from './services/generate-illustration';
 import { generateThumbnails } from './services/generate-thumbnails';
 import { cleanupFiles } from './services/cleanup-files';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
-import { TTSClient } from './clients/interfaces/TTS';
-import { OpenAIClient } from './clients/openai';
+import { generateLLMResponse } from './services/generate-llm-response';
 
 const CHANNELS = [Channels.ALMA_DE_TERREIRO]
 
-const openai: TTSClient & LLMClient = new OpenAIClient();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
 const ENABLED_FORMATS: Array<Compositions> = [Compositions.ReligiousPortrait, Compositions.ReligiousLandscape];
@@ -35,7 +33,11 @@ if (!topic) {
 
 const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
     console.log(`Writing ${composition} script based on research...`);
-    const fullScript = await openai.complete(Agent.RELIGIOUS_UMBANDA_WRITER, `Tópico: ${topic}\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo, porém nunca referencie o mesmo, seu roteiro deve ser autoral sem referências a documentos externos!\n\n. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`, [groundingFilePath]);
+    const fullScript = await generateLLMResponse({
+        agent: Agent.RELIGIOUS_UMBANDA_WRITER, 
+        prompt: `Tópico: ${topic}\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo, porém nunca referencie o mesmo, seu roteiro deve ser autoral sem referências a documentos externos!\n\n. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`,
+        filesSrc: groundingFilePath ? [groundingFilePath] : undefined,
+    });
 
     return fullScript.scripts.map(script => ({
         ...script,
@@ -48,14 +50,17 @@ for (const script of scripts) {
 
     await Promise.all(
         script.segments.map(async (segment) => {
-            const mediaSrc = await generateIllustration(segment);
+            const mediaSrc = segment.illustration && await generateIllustration({ description: segment.illustration.description, type: segment.illustration.type, context: segment.text })
             segment.mediaSrc = mediaSrc;
         })
     );
 
     const thumbnails = script.compositions?.includes(Compositions.ReligiousLandscape)
-        ? await generateThumbnails(topic, script.compositions!, CHANNELS)
-        : undefined;
+        ? await generateThumbnails({
+            videoTitle: topic, 
+            compositions: script.compositions!, 
+            channels: CHANNELS
+        }) : undefined;
 
     const audio = await synthesizeSpeech(
         script.segments, 

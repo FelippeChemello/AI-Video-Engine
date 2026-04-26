@@ -2,13 +2,8 @@ import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
 import { Channels, Compositions, Script, ScriptWithTitle } from './config/types';
-import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
-import { Agent, LLMClient } from "./clients/interfaces/LLM";
-import { OpenAIClient } from "./clients/openai";
-import { AnthropicClient } from "./clients/anthropic";
-import { GeminiClient } from "./clients/gemini";
-import { Speaker, TTSClient } from './clients/interfaces/TTS';
-import { GrokClient } from './clients/grok';
+import { Agent, ModelProvider } from "./clients/interfaces/LLM";
+import { Speaker } from './clients/interfaces/TTS';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { cleanupFiles } from './services/cleanup-files';
@@ -17,13 +12,11 @@ import { saveScriptFile } from './services/save-script-file';
 import { titleToFileName } from './utils/title-to-filename';
 import { synthesizeSpeech } from './services/synthesize-speech';
 import { sanitizeText } from './utils/sanitize-text';
+import { generateLLMResponse, LLMRequest } from './services/generate-llm-response';
+import { generateIllustration } from './services/generate-illustration';
 
 const CHANNELS = [Channels.CODESTACK]
 
-const openai: LLMClient & ImageGeneratorClient & TTSClient = new OpenAIClient();
-const anthropic: LLMClient = new AnthropicClient();
-const gemini: LLMClient & ImageGeneratorClient & TTSClient = new GeminiClient();
-const grok: LLMClient = new GrokClient();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
 const topics = process.argv.slice(2);
@@ -41,30 +34,34 @@ const positions: Array<{
     grok: string;
 }> = [];
 
-for (const topicIndex in topics) {
-    const topic = topics[topicIndex];
+for (const topic of topics) {
     console.log(`\n\nStarting generation for topic: ${topic}`);
+
+    const llmImput: LLMRequest<Agent.DEBATE> = {
+        agent: Agent.DEBATE,
+        prompt: `Forneça a sua opinião concisa e direta sobre o seguinte tópico: ${topic}`,
+    }
 
     const [
         { position: openaiOpinion },
         { position: anthropicOpinion },
         { position: geminiOpinion },
         { position: grokOpinion },
-        { mediaSrc: illustration }
+        mediaSrc
     ] = await Promise.all([
-        openai.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
-        anthropic.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
-        gemini.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Gemini recusou-se a responder." })),
-        grok.complete(Agent.DEBATE, `Tópico: ${topic}`).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
-        openai.generate({
-          prompt: `Uma ilustração detalhada em estilo moderno que represente um debate sobre o tópico: "${topic}" - A imagem não deve conter background nem nenhum tipo de texto, apenas elementos visuais que representem o tema do debate de forma criativa e simbólica.`,
-          config: { background: 'transparent' }
-        }),
+        generateLLMResponse({ ...llmImput, providers: [ModelProvider.CODEX, ModelProvider.OPENAI] }).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [ModelProvider.ANTHROPIC] }).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [ModelProvider.GEMINI] }).catch(() => ({ position: "O modelo da Google recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [ModelProvider.GROK] }).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
+        generateIllustration({
+            type: 'image_generation',
+            description: `Crie uma ilustração que represente o seguinte tópico de forma criativa e visualmente atraente: ${topic} - A imagem não deve conter texto, apenas elementos visuais que capturem a essência do tema, além disso não utilize background na imagem, apenas os elementos visuais relacionados ao tópico.`,
+        })
     ]);
 
     positions.push({
         topic,
-        illustration: illustration || '',
+        illustration: mediaSrc || '',
         openai: openaiOpinion,
         anthropic: anthropicOpinion,
         gemini: geminiOpinion,
@@ -72,7 +69,10 @@ for (const topicIndex in topics) {
     });
 }
 
-const council = await gemini.complete(Agent.DEBATE_COUNCIL, positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n'))
+const council = await generateLLMResponse({
+    agent: Agent.DEBATE_COUNCIL,
+    prompt: positions.map(p => `Tópico: ${p.topic} \n\n [OpenAI]: ${p.openai} \n\n [Anthropic]: ${p.anthropic} \n\n [Gemini]: ${p.gemini} \n\n [Grok]: ${p.grok}`).join('\n\n---\n\n'),
+})
 
 const topicsScripted: Script[] = positions.map(p => ([
     { speaker: Speaker.Narrator, text: `[Narrator] ${p.topic}`, mediaSrc: p.illustration },
@@ -107,11 +107,11 @@ for (const script of scripts) {
     const audio = await synthesizeSpeech(script.segments);
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
-    const thumbnails = await generateThumbnails(
-        script.compositions?.includes(Compositions.DebatePortrait) ? sanitizeText(script.segments[0].text) : script.title,
-        script.compositions!, 
-        CHANNELS
-    )
+    const thumbnails = await generateThumbnails({
+        videoTitle: script.compositions?.includes(Compositions.DebatePortrait) ? sanitizeText(script.segments[0].text) : script.title,
+        channels: CHANNELS,
+        compositions: script.compositions!,
+    })
 
     const settings = script.compositions?.includes(Compositions.DebateLandscape)
         ? { winner: council.winner }

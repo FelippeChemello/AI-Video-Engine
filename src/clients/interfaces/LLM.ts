@@ -24,7 +24,7 @@ export enum Agent {
     RELIGIOUS_UMBANDA_WRITER = 'RELIGIOUS_UMBANDA_WRITER',
 }
 
-enum ModelProvider {
+export enum ModelProvider {
     OPENAI = 'openai',
     CODEX = 'codex',
     ANTHROPIC = 'anthropic',

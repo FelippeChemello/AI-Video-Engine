@@ -5,11 +5,8 @@ import { publicDir } from './config/path';
 import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
-import { ImageGeneratorClient } from './clients/interfaces/ImageGenerator';
 import { titleToFileName } from './utils/title-to-filename';
-import { Agent, LLMClient } from "./clients/interfaces/LLM";
-import { OpenAIClient } from "./clients/openai";
-import { AnthropicClient } from "./clients/anthropic";
+import { Agent } from "./clients/interfaces/LLM";
 import { NewsletterFetcher, NewsletterSource } from './clients/interfaces/NewsletterFetcher';
 import { GmailClient } from './clients/gmail';
 import { ENV } from './config/env';
@@ -18,11 +15,12 @@ import { synthesizeSpeech } from './services/synthesize-speech';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
 import { generateIllustration } from './services/generate-illustration';
 import { cleanupFiles } from './services/cleanup-files';
+import { generateLLMResponse } from './services/generate-llm-response';
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
-const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const gmail: NewsletterFetcher = new GmailClient();
 
+const CHANNELS = [Channels.CODESTACK]
 const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait];
 
 const newsletterFile = process.argv[2]
@@ -31,7 +29,10 @@ const newsletter: { title: string; content: string } = newsletterFile
     : await gmail.fetchContent(NewsletterSource.FILIPE_DESCHAMPS);
 
 console.log(`Writing script based on newsletter ${newsletter.title}...`);
-const scriptText = await openai.complete(Agent.NEWSLETTER_WRITER, `${newsletter.title}\n\n${newsletter.content}`); 
+const scriptText = await generateLLMResponse({
+    agent: Agent.NEWSLETTER_WRITER,
+    prompt: `${newsletter.title}\n\n${newsletter.content}`
+});
 
 const scripts: ScriptWithTitle | ScriptWithTitle[] = scriptText.scripts as ScriptWithTitle | ScriptWithTitle[];
 
@@ -45,7 +46,11 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
 
     await Promise.all(
         script.segments.map(async (segment) => {
-            const mediaSrc = await generateIllustration(segment);
+            const mediaSrc = segment.illustration && await generateIllustration({
+                description: segment.illustration.description,
+                type: segment.illustration.type,
+                context: segment.text
+            });
             segment.mediaSrc = mediaSrc;
         })
     );
@@ -54,7 +59,7 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
         script, 
         formats: ENABLED_FORMATS, 
         scriptSrc: path.basename(scriptTextFile),
-        channels: [Channels.CODESTACK]
+        channels: CHANNELS,
     });
 
     cleanupFiles([

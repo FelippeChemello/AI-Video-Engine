@@ -3,6 +3,7 @@ import { GeminiClient } from "../clients/gemini";
 import {
     channelThumbnailConfig,
     ImageGeneratorClient,
+    ThumbnailParams,
 } from "../clients/interfaces/ImageGenerator";
 import { OpenAIClient } from "../clients/openai";
 import {
@@ -15,23 +16,39 @@ const codex: ImageGeneratorClient = new CodexClient();
 const gemini: ImageGeneratorClient = new GeminiClient();
 const openai: ImageGeneratorClient = new OpenAIClient();
 
-export async function generateThumbnails(
-    title: string,
-    compositions: Array<Compositions>,
-    channels: Array<Channels>,
-    engines: Array<ImageGeneratorClient> = [codex, openai, gemini],
-): Promise<Array<string>> {
+type ThumbnailRequest = {
+    videoTitle: string;
+    compositions: Array<Compositions>;
+    channels: Array<Channels>;
+    customImage?: {
+        prompt: string;
+        src: string;
+    };
+    engines?: Array<ImageGeneratorClient>;
+    textLanguage?: 'ENGLISH' | 'PORTUGUESE';
+};
+
+export async function generateThumbnails({
+    videoTitle: title,
+    compositions,
+    channels,
+    customImage,
+    textLanguage = 'PORTUGUESE',
+    engines = [codex, gemini, openai],
+}: ThumbnailRequest): Promise<Array<string>> {
     const thumbnails: Array<string | undefined> = [];
 
     for (const composition of compositions) {
         for (const channel of channels) {
-            const { prompter, imageBaseSrc } =
-                channelThumbnailConfig[channel] || {};
+            const { prompter, imageBaseSrc } = customImage
+                ? { prompter: () => customImage.prompt, imageBaseSrc: customImage.src }
+                : channelThumbnailConfig[channel] || {};
 
             const prompt = prompter ? prompter(title) : undefined;
-            const options = {
+            const options: ThumbnailParams = {
                 videoTitle: title,
                 orientation: compositionOrientationMap[composition],
+                thumbnailTextLanguage: textLanguage,
                 customImage:
                     imageBaseSrc && prompt
                         ? {

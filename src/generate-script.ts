@@ -5,20 +5,17 @@ import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { titleToFileName } from './utils/title-to-filename';
-import { Agent, LLMClient } from "./clients/interfaces/LLM";
-import { OpenAIClient } from "./clients/openai";
-import { GeminiClient } from "./clients/gemini";
+import { Agent } from "./clients/interfaces/LLM";
 import { saveScriptFile } from './services/save-script-file';
 import { synthesizeSpeech } from './services/synthesize-speech';
 import { generateIllustration } from './services/generate-illustration';
 import { generateThumbnails } from './services/generate-thumbnails';
 import { cleanupFiles } from './services/cleanup-files';
 import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
+import { generateLLMResponse } from './services/generate-llm-response';
 
 const CHANNELS = [Channels.CODESTACK]
 
-const openai: LLMClient = new OpenAIClient();
-const gemini: LLMClient = new GeminiClient();
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 
 const ENABLED_FORMATS: Array<Compositions> = [Compositions.Portrait, Compositions.Landscape];
@@ -34,7 +31,7 @@ if (!topic) {
 }
 
 console.log(`Starting research on topic: ${topic}`);
-const research = await gemini.complete(Agent.RESEARCHER, `Tópico: ${topic}`);
+const research = await generateLLMResponse({ agent: Agent.RESEARCHER, prompt: `Tópico: ${topic}` });
 
 console.log("--------------------------")
 console.log("Research:")
@@ -43,7 +40,10 @@ console.log("--------------------------")
 
 const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
     console.log(`Writing ${composition} script based on research...`);
-    const scriptText = await openai.complete(Agent.SCRIPT_WRITER, `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`);
+    const scriptText = await generateLLMResponse({
+        agent: Agent.SCRIPT_WRITER, 
+        prompt: `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. \n\nO roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`
+    });
 
     return scriptText.scripts.map(script => ({
         ...script,
@@ -56,12 +56,16 @@ for (const script of scripts) {
 
     await Promise.all(
         script.segments.map(async (segment) => {
-            const mediaSrc = await generateIllustration(segment);
+            const mediaSrc = segment.illustration && await generateIllustration({ description: segment.illustration.description, type: segment.illustration.type, context: segment.text })
             segment.mediaSrc = mediaSrc;
         })
     );
 
-    const thumbnails = await generateThumbnails(script.title, script.compositions!, CHANNELS);    
+    const thumbnails = await generateThumbnails({
+        videoTitle: script.title, 
+        compositions: script.compositions!,
+        channels: CHANNELS
+    });
 
     const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
