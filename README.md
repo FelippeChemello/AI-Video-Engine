@@ -13,6 +13,7 @@ AI Vídeo Engine is a Node.js toolkit that orchestrates multiple LLMs, text-to-s
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Environment variables](#environment-variables)
+  - [Codex](#codex)
   - [Pre-requisites](#pre-requisites)
   - [Available scripts](#available-scripts)
     - [Content Generation](#content-generation)
@@ -23,12 +24,13 @@ AI Vídeo Engine is a Node.js toolkit that orchestrates multiple LLMs, text-to-s
 
 ## Requirements
 
-- Node.js v20 (see `.nvmrc`)
+- Node.js v24 (see `.nvmrc`)
 - [pnpm](https://pnpm.io/)
 - FFmpeg installed and in your `PATH`
-- Modal services for audio alignment:
-  - [Montreal Forced Aligner (MFA)](https://github.com/FelippeChemello/modal_montreal_forced_aligner)
-  - [Aeneas](https://github.com/FelippeChemello/modal_aeneas)
+- Modal services:
+    - [Montreal Forced Aligner (MFA)](https://github.com/FelippeChemello/modal_montreal_forced_aligner)
+    - [Aeneas](https://github.com/FelippeChemello/modal_aeneas)
+    - [QwenTTS](https://github.com/FelippeChemello/modal_qwenTTS)
 
 ## Installation
 
@@ -40,15 +42,32 @@ pnpm install
 
 Create a `.env` file at the project root. Required variables are validated in [`src/config/env.ts`](src/config/env.ts):
 
-- **AI Models:** `GEMINI_PAID_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
+- **AI Models:** `GEMINI_PAID_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROK_API_KEY`, `CODEX_ACCOUNT_ID`, `CODEX_REFRESH_TOKEN`
 - **Search & Email:** `GOOGLE_SERP_API_KEY`, `GOOGLE_SERP_ID`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`
-- **Audio Services:** `MFA_BASE_URL`, `MFA_API_KEY`, `AENEAS_BASE_URL`, `AENEAS_API_KEY`, `ELEVENLABS_API_KEY`
+- **Audio Services:** `MFA_BASE_URL`, `MFA_API_KEY`, `AENEAS_BASE_URL`, `AENEAS_API_KEY`, `ELEVENLABS_API_KEY`, `QWEN_TTS_API_KEY`, `FISH_AUDIO_API_KEY`
 - **Script Management:** `NOTION_TOKEN`, `NOTION_DEFAULT_DATABASE_ID`
+- **Video Output:** `YOUTUBE_REFRESH_TOKEN_<CHANNEL_NAME>`
+
+## Codex
+
+To get the updated refresh token for Codex, run:
+
+```bash
+npx @openai/codex login
+```
+
+To see the available models for your account, you can either run:
+
+```bash
+npx openai-oauth
+```
+
+Or run Codex interactively and type `/models` inside it.
 
 ## Pre-requisites
 
 - Download background videos (mp4 files) and place them in `public/assets/`. These will be used randomly in video compositions.
-- Replace `public/assets/cody.png` and images in `src/video/Felippe.tsx` with your own profile pictures.
+- Add more assets (gifs) for background on `public/assets` and update `notion.ts` to include them in the script generation logic.
 
 ## Available scripts
 
@@ -60,6 +79,8 @@ Run any command with `pnpm <command>`:
 - **`dev:newsletter [file]`** – Convert newsletter content into video scripts (fetches from Gmail if no file provided)
 - **`dev:news`** – Research latest news and generate video scripts automatically
 - **`dev:debate <topic1> [topic2...]`** – Create debate videos with opinions from multiple AI models (OpenAI, Anthropic, Gemini, Grok)
+- **`dev:tinder-roast <archetype>`** – Generate a funny Tinder roast video script for a given archetype (e.g., "bro", "Karen", "techie")
+- **`dev:umbanda <question> <file-path-for-grounding>`** – Create a video religious script answering a question grounded in specific content (e.g., a PDF or text file)
 
 ### Video Production
 
@@ -74,24 +95,28 @@ Run any command with `pnpm <command>`:
 ## Usage examples
 
 **Generate a video from a topic:**
+
 ```bash
 pnpm dev:script "Artificial Intelligence"
 pnpm dev:video
 ```
 
 **Create a debate video:**
+
 ```bash
 pnpm dev:debate "Should AI replace developers?" "Future of remote work"
 pnpm dev:video
 ```
 
 **Process newsletter into video:**
+
 ```bash
 pnpm dev:newsletter
 pnpm dev:video
 ```
 
 **Preview compositions:**
+
 ```bash
 pnpm dev:remotion
 ```
