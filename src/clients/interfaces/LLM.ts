@@ -24,7 +24,7 @@ export enum Agent {
     RELIGIOUS_UMBANDA_WRITER = 'RELIGIOUS_UMBANDA_WRITER',
 }
 
-export enum ModelProvider {
+export enum LLMProvider {
     OPENAI = 'openai',
     CODEX = 'codex',
     ANTHROPIC = 'anthropic',
@@ -34,7 +34,7 @@ export enum ModelProvider {
 
 type AgentConfig = {
     systemPrompt: string;
-    model: { [K in ModelProvider]: string };
+    model: { [K in LLMProvider]: string };
     outputStructure: z.ZodTypeAny;
 }
 
@@ -48,11 +48,11 @@ export const Agents = {
     RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL,
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL,
         },
         outputStructure: z.object({
             research: z.string(),
@@ -61,11 +61,11 @@ export const Agents = {
     NEWS_RESEARCHER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-researcher.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             news: z.array(z.object({
@@ -78,11 +78,11 @@ export const Agents = {
     NEWSLETTER_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -101,11 +101,11 @@ export const Agents = {
     SCRIPT_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -124,11 +124,11 @@ export const Agents = {
     TINDER_ROAST: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'tinder-roasting-story-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
           meta: z.object({
@@ -164,11 +164,11 @@ export const Agents = {
     SCRIPT_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -187,11 +187,11 @@ export const Agents = {
     NEWSLETTER_REVIEWER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-reviewer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({
@@ -210,11 +210,11 @@ export const Agents = {
     SEO_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'seo.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             title: z.string(),
@@ -226,11 +226,11 @@ export const Agents = {
     MERMAID_GENERATOR: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'mermaid-generator.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             mermaid: z.string(),
@@ -239,11 +239,11 @@ export const Agents = {
     DEBATE: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             position: z.string(),
@@ -252,11 +252,11 @@ export const Agents = {
     DEBATE_COUNCIL: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate-council.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             title: z.string(),
@@ -268,11 +268,11 @@ export const Agents = {
     RELIGIOUS_UMBANDA_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-writer.md'), 'utf-8'),
         model: {
-            [ModelProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [ModelProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [ModelProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [ModelProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [ModelProvider.GROK]: GROK_DEFAULT_MODEL
+            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
             scripts: z.array(z.object({

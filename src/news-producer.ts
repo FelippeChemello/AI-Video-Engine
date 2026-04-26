@@ -5,7 +5,7 @@ import { Channels, Compositions, ScriptWithTitle } from './config/types';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { titleToFileName } from './utils/title-to-filename';
-import { Agent, ModelProvider } from "./clients/interfaces/LLM";
+import { Agent, LLMProvider } from "./clients/interfaces/LLM";
 import { ENV } from './config/env';
 import { saveScriptFile } from './services/save-script-file';
 import { synthesizeSpeech } from './services/synthesize-speech';
@@ -25,7 +25,7 @@ console.log(`Starting research about the latest news`);
 const research = await generateLLMResponse({
     agent: Agent.NEWS_RESEARCHER, 
     prompt: `Research relevant and recent news articles (from the past 12 hours) that would be interesting for our audience. We have already published these topics recently: ${latestNewsScript.map(s => s.title).join(', ')}. Prioritize news that are different from what we have already covered!`,
-    providers: [ModelProvider.GROK]
+    providers: [LLMProvider.GROK]
 });
 
 console.log("--------------------------")

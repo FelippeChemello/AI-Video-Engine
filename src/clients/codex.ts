@@ -4,7 +4,7 @@ import path from 'path';
 import { v4 } from 'uuid';
 
 import { ENV } from '../config/env';
-import { publicDir } from '../config/path';
+import { outputDir, publicDir } from '../config/path';
 import { Orientation } from '../config/types';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent, AgentOutput, CODEX_DEFAULT_MODEL } from './interfaces/LLM';
@@ -119,7 +119,11 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
         }
     }
 
-    private async saveImage(stream: AsyncGenerator<Partial<ServerSentEvent>>, id: string | number): Promise<{ mediaSrc?: string; }> {
+    private async saveImage(
+        stream: AsyncGenerator<Partial<ServerSentEvent>>, 
+        id: string | number,
+        destination = publicDir
+    ): Promise<{ mediaSrc?: string; }> {
         let fullBase64 = '';
 
         for await (const event of stream) {
@@ -148,7 +152,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
 
                     const buffer = Buffer.from(b64Data, 'base64');
                     const filename = `image-${id}.png`;
-                    const filePath = path.join(publicDir, filename);
+                    const filePath = path.join(destination, filename);
                     fs.writeFileSync(filePath, buffer);
                     
                     return { mediaSrc: filename };
@@ -191,7 +195,6 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                 tools: [{ 
                     type: 'image_generation', 
                     quality: 'low', 
-                    background: 'opaque',
                     model: 'gpt-image-2',
                     size: '960x720',
                     ...config,
@@ -257,8 +260,8 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
 
         const stream = this.iterateServerSentEvents(response.body);
 
-        const filename = `${titleToFileName(videoTitle)}-Thumbnail-${orientation}.png`;
-        const { mediaSrc } = await this.saveImage(stream, filename);        
+        const filename = `${titleToFileName(videoTitle)}-Thumbnail-${orientation}`;
+        const { mediaSrc } = await this.saveImage(stream, filename, outputDir);        
 
         return { mediaSrc }
     }

@@ -2,7 +2,7 @@ import path from 'path';
 
 import { outputDir, publicDir } from './config/path';
 import { Channels, Compositions, Script, ScriptWithTitle } from './config/types';
-import { Agent, ModelProvider } from "./clients/interfaces/LLM";
+import { Agent, LLMProvider } from "./clients/interfaces/LLM";
 import { Speaker } from './clients/interfaces/TTS';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
@@ -49,13 +49,13 @@ for (const topic of topics) {
         { position: grokOpinion },
         mediaSrc
     ] = await Promise.all([
-        generateLLMResponse({ ...llmImput, providers: [ModelProvider.CODEX, ModelProvider.OPENAI] }).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
-        generateLLMResponse({ ...llmImput, providers: [ModelProvider.ANTHROPIC] }).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
-        generateLLMResponse({ ...llmImput, providers: [ModelProvider.GEMINI] }).catch(() => ({ position: "O modelo da Google recusou-se a responder." })),
-        generateLLMResponse({ ...llmImput, providers: [ModelProvider.GROK] }).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [LLMProvider.CODEX, LLMProvider.OPENAI] }).catch(() => ({ position: "O modelo da OpenAI recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [LLMProvider.ANTHROPIC] }).catch(() => ({ position: "O modelo da Anthropic recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [LLMProvider.GEMINI] }).catch(() => ({ position: "O modelo da Google recusou-se a responder." })),
+        generateLLMResponse({ ...llmImput, providers: [LLMProvider.GROK] }).catch(() => ({ position: "O modelo da Grok recusou-se a responder." })),
         generateIllustration({
             type: 'image_generation',
-            description: `Crie uma ilustração que represente o seguinte tópico de forma criativa e visualmente atraente: ${topic} - A imagem não deve conter texto, apenas elementos visuais que capturem a essência do tema, além disso não utilize background na imagem, apenas os elementos visuais relacionados ao tópico.`,
+            description: `Crie uma ilustração que represente o seguinte tópico de forma criativa e visualmente atraente: ${topic} - A imagem não deve conter texto, apenas elementos visuais que capturem a essência do tema.`,
         })
     ]);
 

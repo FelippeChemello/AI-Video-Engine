@@ -2,6 +2,12 @@ import path from "path";
 import { Channels, Orientation } from "../../config/types";
 import { publicDir } from "../../config/path";
 
+export enum ImageGeneratorProvider {
+    OPENAI = 'openai',
+    CODEX = 'codex',
+    GEMINI = 'gemini',
+}
+
 export type Config = { [key: string]: any } | undefined;
 
 export type GenerationParams = {

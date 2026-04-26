@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import { Channels, Compositions, ScriptWithTitle } from './config/types';
-import { Agent, ModelProvider } from "./clients/interfaces/LLM";
+import { Agent, LLMProvider } from "./clients/interfaces/LLM";
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { Speaker } from './clients/interfaces/TTS';
@@ -29,7 +29,7 @@ console.log(`\n\nStarting generation for archetype: ${archetype}`);
 const roastScript = await generateLLMResponse({
     agent: Agent.TINDER_ROAST, 
     prompt: `Generate a funny Tinder roast for the archetype: ${archetype}. Keep it funny and witty.`,
-    providers: [ModelProvider.GROK],
+    providers: [LLMProvider.GROK],
 })
 
 console.log(JSON.stringify(roastScript, null, 2));

@@ -101,7 +101,6 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
             tools: [{ 
                 type: 'image_generation', 
                 quality: 'low', 
-                background: 'opaque',
                 model: 'gpt-image-2',
                 // @ts-expect-error the OpenAI client types are not up to date with the latest API changes
                 size: '960x720',

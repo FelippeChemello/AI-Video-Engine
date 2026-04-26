@@ -2,7 +2,7 @@ import { CodexClient } from "../clients/codex";
 import { GeminiClient } from "../clients/gemini";
 import { Google } from "../clients/google";
 import { CodeRendererClient } from "../clients/interfaces/CodeRenderer";
-import { ImageGeneratorClient } from "../clients/interfaces/ImageGenerator";
+import { ImageGeneratorClient, ImageGeneratorProvider } from "../clients/interfaces/ImageGenerator";
 import { Agent, LLMClient } from "../clients/interfaces/LLM";
 import { MermaidRendererClient } from "../clients/interfaces/MermaidRenderer";
 import { SearcherClient } from "../clients/interfaces/Searcher";
@@ -11,6 +11,14 @@ import { OpenAIClient } from "../clients/openai";
 import { Shiki } from "../clients/shiki";
 import { sanitizeText } from "../utils/sanitize-text";
 
+type IllustrationRequest = {
+    type: "mermaid" | "query" | "code" | "image_generation";
+    description: string;
+    context?: string;
+    imageSrc?: string; // Optional base image source for image generation,
+    providers?: Array<ImageGeneratorProvider>;
+}
+
 const openai: LLMClient & ImageGeneratorClient = new OpenAIClient();
 const gemini: ImageGeneratorClient = new GeminiClient();
 const codex: LLMClient & ImageGeneratorClient = new CodexClient();
@@ -18,20 +26,18 @@ const mermaid: MermaidRendererClient = new Mermaid();
 const shiki: CodeRendererClient = new Shiki();
 const google: SearcherClient = new Google();
 
-const imageGenerationEngines: Array<ImageGeneratorClient> = [codex, gemini, openai];
-
-type IllustrationRequest = {
-    type: "mermaid" | "query" | "code" | "image_generation";
-    description: string;
-    context?: string;
-    imageSrc?: string; // Optional base image source for image generation
-}
+const imageGeneratorMap: Record<ImageGeneratorProvider, ImageGeneratorClient> = {
+    [ImageGeneratorProvider.OPENAI]: openai,
+    [ImageGeneratorProvider.CODEX]: codex,
+    [ImageGeneratorProvider.GEMINI]: gemini,
+};
 
 export async function generateIllustration({
     type,
     description,
     context = "No additional context provided.",
-    imageSrc
+    imageSrc,
+    providers = [ImageGeneratorProvider.CODEX, ImageGeneratorProvider.GEMINI, ImageGeneratorProvider.OPENAI],
 }: IllustrationRequest): Promise<string | undefined> {
     let mediaSrc: string | undefined;
     try {
@@ -72,6 +78,8 @@ export async function generateIllustration({
             case "image_generation":
             default:
                 console.log("Generating image");
+                const imageGenerationEngines = providers.map(provider => imageGeneratorMap[provider]).filter(engine => engine !== undefined);
+
                 for (const engine of imageGenerationEngines) {
                     try {
                         const result = await engine.generate({ prompt: description, baseImageSrc: imageSrc });
