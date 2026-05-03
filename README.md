@@ -42,7 +42,7 @@ pnpm install
 
 Create a `.env` file at the project root. Required variables are validated in [`src/config/env.ts`](src/config/env.ts):
 
-- **AI Models:** `GEMINI_PAID_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROK_API_KEY`, `CODEX_ACCOUNT_ID`, `CODEX_REFRESH_TOKEN`
+- **AI Models:** `GEMINI_PAID_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROK_API_KEY`. Codex uses `~/.codex/auth.json`; run `pnpm codex:login` when you need to sign in.
 - **Search & Email:** `GOOGLE_SERP_API_KEY`, `GOOGLE_SERP_ID`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`
 - **Audio Services:** `MFA_BASE_URL`, `MFA_API_KEY`, `AENEAS_BASE_URL`, `AENEAS_API_KEY`, `ELEVENLABS_API_KEY`, `QWEN_TTS_API_KEY`, `FISH_AUDIO_API_KEY`
 - **Script Management:** `NOTION_TOKEN`, `NOTION_DEFAULT_DATABASE_ID`

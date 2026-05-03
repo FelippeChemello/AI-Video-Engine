@@ -14,7 +14,8 @@
     "dev:video": "tsx --env-file .env src/render-video.ts",
     "dev:metrics": "tsx --env-file .env src/metrics.ts",
     "dev:output": "tsx --env-file .env src/download-output.ts",
-    "dev:remotion": "remotion preview --props=./public/script.json"
+    "dev:remotion": "remotion preview --props=./public/script.json",
+    "codex:login": "codex login"
   },
   "keywords": [],
   "author": "",

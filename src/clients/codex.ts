@@ -1,5 +1,6 @@
  
 import fs from 'fs'
+import os from 'os';
 import path from 'path';
 import { v4 } from 'uuid';
 
@@ -14,23 +15,145 @@ import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 export const REFRESH_URL = "https://auth.openai.com/oauth/token";
 export const CODEX_API_URL = "https://chatgpt.com/backend-api/codex/responses";
 export const CODEX_SCOPE = "openid profile email offline_access";
+export const TOKEN_EXPIRY_SKEW_SECONDS = 60;
 
 type ServerSentEvent = {
     event: string;
     data: string;
 }
 
+type CodexTokenData = {
+    id_token?: Record<string, unknown>;
+    access_token?: string;
+    refresh_token?: string;
+    account_id?: string;
+}
+
+type CodexAuthFile = {
+    auth_mode?: string;
+    OPENAI_API_KEY?: string | null;
+    tokens?: CodexTokenData;
+    last_refresh?: string;
+}
+
+type CodexRefreshResponse = {
+    id_token?: string;
+    access_token?: string;
+    refresh_token?: string;
+}
+
+type CodexAuthState = {
+    accessToken: string;
+    accountId: string;
+}
+
+type CodexStreamResponse = Response & {
+    body: ReadableStream<Uint8Array>;
+}
+
 export class CodexClient implements ImageGeneratorClient, LLMClient {
     private accessToken: string | null = null;
+    private accountId: string | null = null;
+    private refreshPromise: Promise<CodexAuthState> | null = null;
 
-    private async init(): Promise<void> {
+    private getAuthFilePath(): string {
+        return ENV.CODEX_AUTH_FILE ?? path.join(os.homedir(), '.codex', 'auth.json');
+    }
+
+    private readAuthFile(): CodexAuthFile {
+        const authFilePath = this.getAuthFilePath();
+
+        if (!fs.existsSync(authFilePath)) {
+            throw new Error(`[CODEX] Auth file not found at ${authFilePath}. Run "pnpm codex:login" to create it.`);
+        }
+
+        return JSON.parse(fs.readFileSync(authFilePath, 'utf8')) as CodexAuthFile;
+    }
+
+    private writeAuthFile(authFile: CodexAuthFile): void {
+        const authFilePath = this.getAuthFilePath();
+        const tmpPath = `${authFilePath}.${process.pid}.tmp`;
+        const json = `${JSON.stringify(authFile, null, 2)}\n`;
+
+        fs.writeFileSync(tmpPath, json, { mode: 0o600 });
+        fs.renameSync(tmpPath, authFilePath);
+    }
+
+    private parseJwtPayload(token: string): Record<string, unknown> | null {
+        const [, payload] = token.split('.');
+        if (!payload) return null;
+
+        try {
+            const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '=');
+            return JSON.parse(Buffer.from(paddedPayload, 'base64').toString('utf8')) as Record<string, unknown>;
+        } catch {
+            return null;
+        }
+    }
+
+    private isAccessTokenFresh(accessToken: string): boolean {
+        const payload = this.parseJwtPayload(accessToken);
+        const exp = payload?.exp;
+
+        if (typeof exp !== 'number') return false;
+
+        return exp > Math.floor(Date.now() / 1000) + TOKEN_EXPIRY_SKEW_SECONDS;
+    }
+
+    private getAccountId(authFile: CodexAuthFile, accessToken: string): string | null {
+        const tokenAccountId = authFile.tokens?.account_id;
+        if (tokenAccountId) return tokenAccountId;
+
+        const idTokenAccountId = authFile.tokens?.id_token?.chatgpt_account_id;
+        if (typeof idTokenAccountId === 'string') return idTokenAccountId;
+
+        const accessTokenAccountId = this.parseJwtPayload(accessToken)?.chatgpt_account_id;
+        if (typeof accessTokenAccountId === 'string') return accessTokenAccountId;
+
+        return null;
+    }
+
+    private async init(forceRefresh = false): Promise<CodexAuthState> {
+        if (this.refreshPromise) {
+            return this.refreshPromise;
+        }
+
+        this.refreshPromise = this.refreshAuth(forceRefresh).finally(() => {
+            this.refreshPromise = null;
+        });
+
+        return this.refreshPromise;
+    }
+
+    private async refreshAuth(forceRefresh: boolean): Promise<CodexAuthState> {
+        const authFile = this.readAuthFile();
+        const accessToken = authFile.tokens?.access_token;
+        const refreshToken = authFile.tokens?.refresh_token;
+
+        if (!forceRefresh && accessToken && this.isAccessTokenFresh(accessToken)) {
+            const accountId = this.getAccountId(authFile, accessToken);
+            if (!accountId) {
+                throw new Error(`[CODEX] Could not resolve ChatGPT account id from ${this.getAuthFilePath()}`);
+            }
+
+            this.accessToken = accessToken;
+            this.accountId = accountId;
+
+            return { accessToken, accountId };
+        }
+
+        if (!refreshToken) {
+            throw new Error(`[CODEX] No refresh token found in ${this.getAuthFilePath()}. Run "pnpm codex:login" to sign in again.`);
+        }
+
         const response = await fetch(REFRESH_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 grant_type: 'refresh_token',
                 client_id: ENV.CODEX_CLIENT_ID,
-                refresh_token: ENV.CODEX_REFRESH_TOKEN,
+                refresh_token: refreshToken,
                 scope: CODEX_SCOPE,
             })
         })
@@ -40,28 +163,73 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
             throw new Error(`[CODEX] Failed to refresh Codex access token: ${response.status} - ${errorText}`);
         }
 
-        const data = await response.json() as Record<string, any>;
+        const data = await response.json() as CodexRefreshResponse;
         if (!data.access_token) {
             throw new Error(`[CODEX] No access token returned from Codex refresh: ${JSON.stringify(data)}`);
         }
 
+        authFile.tokens = {
+            ...authFile.tokens,
+            access_token: data.access_token,
+            refresh_token: data.refresh_token ?? refreshToken,
+            id_token: data.id_token ? this.parseJwtPayload(data.id_token) ?? authFile.tokens?.id_token : authFile.tokens?.id_token,
+        }
+        authFile.last_refresh = new Date().toISOString();
+
+        const accountId = this.getAccountId(authFile, data.access_token);
+        if (!accountId) {
+            throw new Error(`[CODEX] Could not resolve ChatGPT account id after refreshing ${this.getAuthFilePath()}`);
+        }
+
+        authFile.tokens.account_id = accountId;
+        this.writeAuthFile(authFile);
+
         this.accessToken = data.access_token;
-        console.log(`[CODEX] Successfully refreshed access token`);        
+        this.accountId = accountId;
+        console.log(`[CODEX] Successfully refreshed and persisted access token`);
+
+        return { accessToken: this.accessToken, accountId: this.accountId };
     }
 
     private async getHeaders() {
-        if (!this.accessToken) {
+        if (!this.accessToken || !this.accountId || !this.isAccessTokenFresh(this.accessToken)) {
             await this.init();
         }
 
         const headers = new Headers();
         headers.set('Authorization', `Bearer ${this.accessToken}`);
-        headers.set('chatgpt-account-id', ENV.CODEX_ACCOUNT_ID);
+        headers.set('chatgpt-account-id', this.accountId as string);
         headers.set("OpenAI-Beta", "responses=experimental");
         headers.set('Content-Type', 'application/json');
         headers.set('Accept', 'text/event-stream');
 
         return headers;
+    }
+
+    private async postCodex(body: unknown, context: string): Promise<CodexStreamResponse> {
+        const bodyJson = JSON.stringify(body);
+        let response = await fetch(CODEX_API_URL, {
+            method: 'POST',
+            headers: await this.getHeaders(),
+            body: bodyJson
+        });
+
+        if (response.status === 401) {
+            await response.body?.cancel();
+            await this.init(true);
+            response = await fetch(CODEX_API_URL, {
+                method: 'POST',
+                headers: await this.getHeaders(),
+                body: bodyJson
+            });
+        }
+
+        if (!response.ok || !response.body) {
+            const errorText = await response.text();
+            throw new Error(`[CODEX] Failed to ${context}: ${response.status} - ${response.statusText} - ${errorText}`);
+        }
+
+        return response as CodexStreamResponse;
     }
 
     private parseEventBlock(block: string): ServerSentEvent {
@@ -173,10 +341,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
     }: GenerationParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[CODEX] Generating image with prompt: ${prompt}`);
 
-        const response = await fetch(CODEX_API_URL, {
-            method: 'POST',
-            headers: await this.getHeaders(),
-            body: JSON.stringify({
+        const response = await this.postCodex({
                 model: CODEX_DEFAULT_MODEL,
                 instructions: "You work for a video creation company and your task is to generate an image based on the provided prompt. The image should be visually appealing and relevant to the content of the prompt. If the prompt includes a base image, use it as inspiration for the generated image!",
                 stream: true,
@@ -200,13 +365,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                     ...config,
                 }],
                 tool_choice: "required"
-            })
-        })
-
-        if (!response.ok || !response.body) {
-            const errorText = await response.text();
-            throw new Error(`[CODEX] Failed to generate image: ${response.status} - ${response.statusText} - ${errorText}`);
-        }
+            }, 'generate image')
 
         const stream = this.iterateServerSentEvents(response.body);
 
@@ -221,10 +380,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[CODEX] Generating thumbnail for script: ${videoTitle}`);
         
-        const response = await fetch(CODEX_API_URL, {
-            method: 'POST',
-            headers: await this.getHeaders(),
-            body: JSON.stringify({
+        const response = await this.postCodex({
                 model: CODEX_DEFAULT_MODEL,
                 instructions: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`,
                 input: [{
@@ -249,14 +405,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                 tool_choice: "required",
                 stream: true,
                 store: false,
-            })
-
-        })
-
-        if (!response.ok || !response.body) {
-            const errorText = await response.text();
-            throw new Error(`[CODEX] Failed to generate thumbnail: ${response.status} - ${response.statusText} - ${errorText}`);
-        }
+            }, 'generate thumbnail')
 
         const stream = this.iterateServerSentEvents(response.body);
 
@@ -277,10 +426,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
             file_data: `data:${getMimetypeFromFilename(path.basename(src)).mimeType};base64,${fs.readFileSync(src).toString('base64')}`,
         })) : []
 
-        const response = await fetch(CODEX_API_URL, {
-            method: 'POST',
-            headers: await this.getHeaders(),
-            body: JSON.stringify({
+        const response = await this.postCodex({
                 model: config.model.codex,
                 instructions: `${config.systemPrompt}\n\nRespond only with the output in a JSON format that strictly follows the structure: ${JSON.stringify(config.outputStructure._def.shape)}, without including any additional text, explanations, or formatting or markdown - only the raw JSON. Always respond with a valid JSON that adheres to the specified structure, even if some fields need to be null or empty. The output should be machine-readable and parsable as JSON.`,
                 input: [
@@ -294,13 +440,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                 ],
                 stream: true,
                 store: false,
-            })
-        })
-
-        if (!response.ok || !response.body) {
-            const errorText = await response.text();
-            throw new Error(`[CODEX] Failed to complete agent ${agent}: ${response.status} - ${response.statusText} - ${errorText}`);
-        }
+            }, `complete agent ${agent}`)
 
         let fullResponse = '';
 

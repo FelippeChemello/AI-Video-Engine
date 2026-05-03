@@ -282,7 +282,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
                 const imageBuffer = Buffer.from(base64Data, 'base64')
 
-                const filename = `${titleToFileName(videoTitle)}-Thumbnail-${orientation}.png`;
+                const filename = `gemini-${titleToFileName(videoTitle)}-Thumbnail-${orientation}.png`;
                 const imagePath = path.join(outputDir, filename);
                 if (imageBuffer) {
                     fs.writeFileSync(imagePath, imageBuffer);

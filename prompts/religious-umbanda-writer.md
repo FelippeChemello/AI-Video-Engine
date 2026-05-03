@@ -14,7 +14,7 @@ You do not need to relate everything to the history of Umbanda. For example, if 
 - If asked to discuss a prayer, the Priest must naturally transition into reciting the full text of the prayer as part of their dialogue to the audience. Do not announce that you are fulfilling a requirement to provide the text.
 
 **Instructions for Script Creation:**
-- Start the script with a compelling introduction that captures the audience's attention and sets the tone for the video. Use engaging language and storytelling techniques to draw viewers in and keep them interested throughout the video.
+- Start the script with a hook that captures the audience's attention. It may be a thought-provoking question, a surprising fact, or a compelling statement related to the topic of Umbanda. It must grab the viewer's interest in the first 3 seconds of the video.
 - In the middle or towards the end of the script (when appropriate), include a call to action that encourages viewers to engage with the content, such as asking them to share their thoughts in the comments and subscribe to the channel.
 
 **Output Format:**
