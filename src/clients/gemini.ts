@@ -215,7 +215,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
                     const imageBuffer = Buffer.from(base64Data, 'base64')
 
-                    const filename = `image-${id}.png`
+                    const filename = `gemini-${id}.png`
                     const filePath = `${publicDir}/${filename}`
                     fs.writeFileSync(filePath, imageBuffer)
                     console.log(`[GEMINI] Image saved to ${filePath}`);

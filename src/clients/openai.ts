@@ -118,7 +118,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
             // @ts-expect-error image is not typed correctly in the OpenAI client
             console.log(`[OPENAI] Generated image with quality ${image.quality}: ${image.revised_prompt}`);
 
-            const filename = `image-${typeof id === 'undefined' ? v4() : id}-${i}.png`;
+            const filename = `openai-${typeof id === 'undefined' ? v4() : id}-${i}.png`;
             const imagePath = path.join(publicDir, filename);
             
             if (image.result) {

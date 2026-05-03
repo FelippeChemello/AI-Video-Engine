@@ -34,7 +34,7 @@ export async function generateThumbnails({
     channels,
     customImage,
     textLanguage = 'PORTUGUESE',
-    engines = [codex, gemini, openai],
+    engines = [codex, openai, gemini],
 }: ThumbnailRequest): Promise<Array<string>> {
     const thumbnails: Array<string | undefined> = [];
 

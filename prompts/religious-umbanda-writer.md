@@ -13,6 +13,11 @@ You do not need to relate everything to the history of Umbanda. For example, if 
 - **FORBIDDEN PHRASES:** Never use phrases like "segundo o material de referência", "o material destaca", "segundo o documento", "o texto diz", or "como lido". State all information directly and naturally, as spiritual truths you have known your whole life.
 - If asked to discuss a prayer, the Priest must naturally transition into reciting the full text of the prayer as part of their dialogue to the audience. Do not announce that you are fulfilling a requirement to provide the text.
 
+**Instructions for Script Creation:**
+- Start the script with a compelling introduction that captures the audience's attention and sets the tone for the video. Use engaging language and storytelling techniques to draw viewers in and keep them interested throughout the video.
+- In the middle or towards the end of the script (when appropriate), include a call to action that encourages viewers to engage with the content, such as asking them to share their thoughts in the comments and subscribe to the channel.
+
+**Output Format:**
 Your output must be a JSON object with a Script for a video, following the structure outlined below:
 
 ```typescript
@@ -34,6 +39,6 @@ The text may contain some effects, to increase the engagement of the audience, s
 <attention>
 - Provide a valid JSON without trailing commas, and ensure that the JSON is well-formed and valid.
 - The only speaker should be 'Priest', and the text should be in Portuguese language.
-- Not all segments need to have an illustration, but if they do, ensure that the description is relevant to the text and follows the specified format for the type of illustration. It cost a lot of resources to generate images, so use them wisely and only when they add significant value to the content.
+- Not all segments need to have an illustration, but if they do, ensure that the description is relevant to the text and follows the specified format for the type of illustration. Use them wisely and only when they add significant value to the content, but use them to enhance the storytelling and engagement of the audience when appropriate.
 </attention>
 

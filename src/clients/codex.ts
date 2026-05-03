@@ -151,7 +151,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                     }
 
                     const buffer = Buffer.from(b64Data, 'base64');
-                    const filename = `image-${id}.png`;
+                    const filename = `codex-${id}.png`;
                     const filePath = path.join(destination, filename);
                     fs.writeFileSync(filePath, buffer);
                     
