@@ -18,13 +18,13 @@ import { AudioEditorClient } from './clients/interfaces/AudioEditor';
 import { VideoUploaderClient } from './clients/interfaces/VideoUploader';
 import { Youtube } from './clients/youtube';
 import { ENV } from './config/env';
-import { Agent, LLMClient } from './clients/interfaces/LLM';
-import { OpenAIClient } from './clients/openai';
+import { Agent } from './clients/interfaces/LLM';
 import { sanitizeText } from './utils/sanitize-text';
 import { ImageEditorClient } from './clients/interfaces/ImageEditor';
 import { SharpClient } from './clients/sharp';
 import { getPublishDate } from './utils/get-publish-date';
 import { cleanupFiles } from './services/cleanup-files';
+import { generateLLMResponse } from './services/generate-llm-response';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
@@ -33,7 +33,6 @@ const MAX_SIZE_THUMBNAIL_IN_MB = 2;
 const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
 const visemeAligner: VisemeAlignerClient = new MFAClient();
-const openai: LLMClient = new OpenAIClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
 const youtube: VideoUploaderClient = new Youtube();
@@ -156,7 +155,10 @@ for (const scriptIndex in scripts) {
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.DONE);
 
         console.log("Generating SEO content...");
-        const seo = await openai.complete(Agent.SEO_WRITER,  script.segments.map((s) => s.text).join('\n'))
+        const seo = await generateLLMResponse({
+            agent: Agent.SEO_WRITER,
+            prompt: script.segments.map(s => s.text).join('\n'),
+        });
 
         await defaultScriptManager.setSEO(script.id, seo);
 
