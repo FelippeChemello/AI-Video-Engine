@@ -10,17 +10,19 @@ import { AudioEditorClient } from "../clients/interfaces/AudioEditor";
 import { FishAudioTTSClient } from "../clients/fishaudio";
 import { OpenAIClient } from "../clients/openai";
 import { QwenClient } from "../clients/qwen";
+import { GrokClient } from "../clients/grok";
 
 const qwen: TTSClient = new QwenClient();
 const gemini: TTSClient = new GeminiClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
 const openai: TTSClient = new OpenAIClient();
+const grok: TTSClient = new GrokClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
 export async function synthesizeSpeech(
     segments: ScriptWithTitle['segments'], 
     maxDurationInSeconds?: number,
-    engines: Array<TTSClient> = [fishaudio, qwen, gemini, openai]
+    engines: Array<TTSClient> = [grok, fishaudio, qwen, gemini, openai]
 ): Promise<{ audioFileName: string, duration?: number }> {
     let audio: SynthesizedAudio | undefined;
     for (const engine of engines) {

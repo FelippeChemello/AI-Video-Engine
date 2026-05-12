@@ -26,6 +26,7 @@ enum VoiceProvider {
     GEMINI = 'gemini',
     FISH_AUDIO = 'fishaudio',
     QWEN_TTS = 'qwen_tts',
+    GROK = 'grok',
 }
 
 export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: string } } = {
@@ -35,6 +36,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Cody',
         [VoiceProvider.GEMINI]: 'Puck',
         [VoiceProvider.FISH_AUDIO]: '2d8b7dcacb2345aabf25862f3f2ce2bd',
+        [VoiceProvider.GROK]: 'ara',
     },
     Felippe: {
         [VoiceProvider.ELEVENLABS]: '7u8qsX4HQsSHJ0f8xsQZ',
@@ -42,6 +44,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Felippe',
         [VoiceProvider.GEMINI]: 'Achird',
         [VoiceProvider.FISH_AUDIO]: '0ba1afd27db44eb2b4cb27fd331b93aa',
+        [VoiceProvider.GROK]: 'leo'
     },
     Narrator: {
         [VoiceProvider.ELEVENLABS]: 'CwhRBWXzGAHq8TQ4Fs17',
@@ -49,6 +52,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Priest',
         [VoiceProvider.GEMINI]: 'Zephyr',
         [VoiceProvider.FISH_AUDIO]: '0b12d715e4c741399594fccb12d4bbe2',
+        [VoiceProvider.GROK]: 'sal',
     },
     ChatGPT: {
         [VoiceProvider.ELEVENLABS]: 'FGY2WhTYpPnrIDTdsKH5',
@@ -56,6 +60,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Jarvis',
         [VoiceProvider.GEMINI]: 'Gacrux',
         [VoiceProvider.FISH_AUDIO]: 'a5b93aeddcc948c19ea04f0afe9d178c',
+        [VoiceProvider.GROK]: 'eve',
     },
     Claude: {
         [VoiceProvider.ELEVENLABS]: 'pNInz6obpgDQGcFmaJgB',
@@ -63,6 +68,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Claude',
         [VoiceProvider.GEMINI]: 'Umbriel',
         [VoiceProvider.FISH_AUDIO]: '102bccca7dc64b6b8f8494c199c5d153',
+        [VoiceProvider.GROK]: 'rex',
     },
     Gemini: {
         [VoiceProvider.ELEVENLABS]: 'Xb7hH8MSUJpSbSDYk0k2',
@@ -70,6 +76,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Gemini',
         [VoiceProvider.GEMINI]: 'Laomedeia',
         [VoiceProvider.FISH_AUDIO]: '2cdf1421a7124b039bf3a496fd988e6c',
+        [VoiceProvider.GROK]: 'leo',
     },
     Grok: {
         [VoiceProvider.ELEVENLABS]: 'pqHfZKP75CvOlQylNhV4',
@@ -77,6 +84,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Grok',
         [VoiceProvider.GEMINI]: 'Aoede',
         [VoiceProvider.FISH_AUDIO]: 'd65c6d85022b46458b9d2347769c0766',
+        [VoiceProvider.GROK]: 'ara',
     },
     Roaster: {
         [VoiceProvider.ELEVENLABS]: 'k3zGUviRBlOalyiswEdo',
@@ -84,6 +92,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Woman',
         [VoiceProvider.GEMINI]: 'Umbriel',
         [VoiceProvider.FISH_AUDIO]: 'f10700a1a6fb400880df70b9d176ccb2',
+        [VoiceProvider.GROK]: 'ara',
     }, 
     Priest: {
         [VoiceProvider.ELEVENLABS]: 'liAlPCvGDJ0qsfPupueo',
@@ -91,6 +100,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Priest',
         [VoiceProvider.GEMINI]: 'Zephyr',
         [VoiceProvider.FISH_AUDIO]: '0b12d715e4c741399594fccb12d4bbe2',
+        [VoiceProvider.GROK]: 'sal',
     }
 }
 
