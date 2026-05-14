@@ -52,7 +52,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Priest',
         [VoiceProvider.GEMINI]: 'Zephyr',
         [VoiceProvider.FISH_AUDIO]: '0b12d715e4c741399594fccb12d4bbe2',
-        [VoiceProvider.GROK]: 'sal',
+        [VoiceProvider.GROK]: 'rdtcsaifsqie',
     },
     ChatGPT: {
         [VoiceProvider.ELEVENLABS]: 'FGY2WhTYpPnrIDTdsKH5',
@@ -60,7 +60,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Jarvis',
         [VoiceProvider.GEMINI]: 'Gacrux',
         [VoiceProvider.FISH_AUDIO]: 'a5b93aeddcc948c19ea04f0afe9d178c',
-        [VoiceProvider.GROK]: 'eve',
+        [VoiceProvider.GROK]: 'sal',
     },
     Claude: {
         [VoiceProvider.ELEVENLABS]: 'pNInz6obpgDQGcFmaJgB',
@@ -100,7 +100,7 @@ export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: stri
         [VoiceProvider.QWEN_TTS]: 'Priest',
         [VoiceProvider.GEMINI]: 'Zephyr',
         [VoiceProvider.FISH_AUDIO]: '0b12d715e4c741399594fccb12d4bbe2',
-        [VoiceProvider.GROK]: 'sal',
+        [VoiceProvider.GROK]: 'rdtcsaifsqie',
     }
 }
 
