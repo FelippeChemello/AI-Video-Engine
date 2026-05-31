@@ -42,7 +42,7 @@ export const OPENAI_DEFAULT_MODEL = 'gpt-5.4';
 export const CODEX_DEFAULT_MODEL = 'gpt-5.5';
 export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5';
 export const GEMINI_DEFAULT_MODEL = 'gemini-3.1-pro-preview';
-export const GROK_DEFAULT_MODEL = 'grok-4-1-fast';
+export const GROK_DEFAULT_MODEL = 'grok-4.3';
 
 export const Agents = {
     RESEARCHER: {

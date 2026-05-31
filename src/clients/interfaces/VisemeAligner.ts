@@ -8,6 +8,7 @@ export const compositionShouldAlignVisemes: Record<Compositions, boolean> = {
     Portrait: true,
     ReligiousLandscape: false,
     ReligiousPortrait: false,
+    ReligiousPortraitVideo: false,
 };  
 
 export const Phone2Viseme: Record<string, string> = {

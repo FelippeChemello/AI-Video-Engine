@@ -11,6 +11,7 @@ export type SaveScriptParams = {
     settings?: any;
     channels?: Array<Channels>;
     date?: Date;
+    avatarVideoSrc?: string;
 };
 
 export const channelAssetsMap: Record<Channels, null | { backgroundPaths: Array<string> }> = {

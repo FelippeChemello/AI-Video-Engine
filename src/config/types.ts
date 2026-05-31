@@ -17,6 +17,7 @@ export enum Compositions {
     // Religious
     ReligiousPortrait = 'ReligiousPortrait',
     ReligiousLandscape = 'ReligiousLandscape',
+    ReligiousPortraitVideo = 'ReligiousPortraitVideo',
 }
 
 export enum Orientation {
@@ -38,6 +39,7 @@ export const compositionOrientationMap: { [key in Compositions]: Orientation } =
     [Compositions.TinderRoast]: Orientation.PORTRAIT,
     [Compositions.ReligiousPortrait]: Orientation.PORTRAIT,
     [Compositions.ReligiousLandscape]: Orientation.LANDSCAPE,
+    [Compositions.ReligiousPortraitVideo]: Orientation.PORTRAIT,
 };
 
 export enum ScriptStatus {
@@ -188,6 +190,7 @@ export type ScriptWithTitle = {
     audio?: Array<AudioScript>;
     compositions?: Array<Compositions>;
     background?: VideoBackground;
+    avatarVideoSrc?: string;
     seo?: string;
     settings?: any;
     thumbnails?: Array<{ filename: string; src: string }>;
@@ -298,5 +301,7 @@ export const videoSchema = z.object({
       viseme: z.string(),
     })).optional(),
   })),
+  avatarVideoSrc: z.string().optional(),
   settings: z.any().optional(),
+  title: z.string(),
 });

@@ -361,7 +361,6 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                     type: 'image_generation', 
                     quality: 'low', 
                     model: 'gpt-image-2',
-                    size: '960x720',
                     ...config,
                 }],
                 tool_choice: "required"

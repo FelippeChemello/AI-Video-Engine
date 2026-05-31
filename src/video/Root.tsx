@@ -13,10 +13,12 @@ import { Tinder } from "./Tinder";
 import { ReligiousPortrait } from "./ReligiousPortrait";
 import { ReligiousLandscape } from "./ReligiousLandscape";
 import { sanitizeText } from "../utils/sanitize-text";
+import { ReligiousPortraitVideo } from "./ReligiousPortraitVideo";
 
 const FPS = 30;
 
 const defaultProps: z.infer<typeof videoSchema> = {
+    title: "",
     audio: [],
     segments: [],
     background: {
@@ -180,6 +182,17 @@ export const RemotionRoot: React.FC = () => {
                 fps={FPS}
                 width={1920}
                 height={1080}
+                schema={videoSchema}
+                defaultProps={defaultProps}
+                calculateMetadata={calculateMetadata}
+            />
+            <Composition
+                id="ReligiousPortraitVideo"
+                component={ReligiousPortraitVideo}
+                durationInFrames={1}
+                fps={FPS}
+                width={1080}
+                height={1920}
                 schema={videoSchema}
                 defaultProps={defaultProps}
                 calculateMetadata={calculateMetadata}

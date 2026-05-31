@@ -1,4 +1,3 @@
-/* eslint-disable @remotion/deterministic-randomness */
 import fs from 'fs'
 import { BlockObjectRequest, Client } from "@notionhq/client";
 import { v4 } from 'uuid';
@@ -32,7 +31,7 @@ export class NotionClient implements ScriptManagerClient {
         this.databaseId = databaseId || ENV.NOTION_DEFAULT_DATABASE_ID;
     }
 
-    async saveScript({ script, formats, scriptSrc, seo, settings, thumbnailsSrc, channels, date }: SaveScriptParams): Promise<void> {
+    async saveScript({ script, formats, scriptSrc, seo, settings, thumbnailsSrc, channels, date, avatarVideoSrc }: SaveScriptParams): Promise<void> {
         console.log(`[NOTION] Saving script ${script.title}`);
 
         const audioFileIds: string[] = []
@@ -68,6 +67,13 @@ export class NotionClient implements ScriptManagerClient {
             }
         }
 
+        let avatarVideoFileId: string | null = null;
+        if (avatarVideoSrc) {
+            console.log(`[NOTION] Uploading video: ${avatarVideoSrc}`);
+
+            avatarVideoFileId = await this.uploadFile(path.join(outputDir, avatarVideoSrc));
+        }
+
         const page = await client.pages.create({
             parent: {
                 database_id: this.databaseId,
@@ -89,7 +95,7 @@ export class NotionClient implements ScriptManagerClient {
                     rich_text: [{ type: 'text', text: { content: seo ? `${seo.title}\n\n${seo.description}\n\n${seo.hashtags?.join(" ") || seo.tags?.join(" #") || ''}` : '' } }],
                 },
                 Output: { 
-                    files: [...thumbnailFileIds, scriptFileId].filter(Boolean).map((fileId) => ({
+                    files: [...thumbnailFileIds, scriptFileId, avatarVideoFileId].filter(Boolean).map((fileId) => ({
                         type: 'file_upload',
                         file_upload: { id: fileId! },
                     }))
@@ -300,6 +306,7 @@ export class NotionClient implements ScriptManagerClient {
             const outputs = page.properties.Output.files;
             const channels = page.properties.Channel.multi_select.map((c) => c.name);
             const date = page.properties.Date.date.start ? new Date(page.properties.Date.date.start) : undefined;
+            const avatarFile = outputs.find(file => file.name.includes('avatar'))
 
             const thumbnails = outputs
               .filter(file => file.name.includes('Thumbnail'))
@@ -407,6 +414,7 @@ export class NotionClient implements ScriptManagerClient {
                 title, 
                 segments, 
                 audio,
+                avatarVideoSrc: avatarFile ? avatarFile.file.url : undefined,
                 compositions,
                 seo,
                 settings,
@@ -467,6 +475,22 @@ export class NotionClient implements ScriptManagerClient {
             const filename = filePath.split('/').pop()
             if (filename) {
                 thumbnail.src = filename;
+            }
+        }
+
+        if (script.avatarVideoSrc) {
+            console.log(`[NOTION] Downloading avatar video: ${script.avatarVideoSrc}`);
+
+            const filePath = `${publicDir}/${v4()}.${script.avatarVideoSrc.split('.').pop()?.split('?')[0]}`;
+
+            const response = await fetch(script.avatarVideoSrc);
+            const buffer = await response.arrayBuffer();
+
+            fs.writeFileSync(filePath, Buffer.from(buffer));
+
+            const filename = filePath.split('/').pop()
+            if (filename) {
+                script.avatarVideoSrc = filename;
             }
         }
 

@@ -6,7 +6,7 @@ import {
   staticFile,
   useVideoConfig,
 } from "remotion";
-import { Audio } from '@remotion/media'
+import { Audio, Video } from '@remotion/media'
 import { z } from "zod";
 import { loadFont } from "@remotion/google-fonts/TitanOne";
 
@@ -16,7 +16,7 @@ import UmbadistaSide from "../../public/assets/umbandista-side.png";
 import parseSentences from "./text-parser";
 import Text from "./Text";
 import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
-import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
+
 import { ImageWithBackground } from "./ImageWithBackground";
 import { Background } from "./Background";
 
@@ -79,11 +79,12 @@ export const ReligiousLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segm
                   {mediaType === 'image' ? (
                     <ImageWithBackground src={staticFile(segment.mediaSrc)} />
                   ) : (
-                    <LoopableOffthreadVideo
+                    <Video
                       src={staticFile(segment.mediaSrc)}
                       muted
                       loop
                       className="w-full h-full object-contain"
+                      style={{ objectFit: "contain" }}
                     />
                   )}
                 </AbsoluteFill>
@@ -119,11 +120,12 @@ export const ReligiousLandscape: React.FC<z.infer<typeof videoSchema>> = ({ segm
                 {mediaType === 'image' ? (
                   <ImageWithBackground src={staticFile(segment.mediaSrc)} />
                 ) : (
-                  <LoopableOffthreadVideo
+                  <Video
                     src={staticFile(segment.mediaSrc)}
                     muted
                     loop
                     className="w-full h-full object-contain"
+                    style={{ objectFit: "contain" }}
                   />
                 )}
               </AbsoluteFill>

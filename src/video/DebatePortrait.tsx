@@ -12,7 +12,7 @@ import { videoSchema } from "../config/types";
 import parseSentences from "./text-parser";
 import Text from "./Text";
 import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
-import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
+import { Video } from "@remotion/media";
 import { speakerMap, VisualizeAudio } from "./VisualizeAudio";
 
 const { fontFamily } = loadFont();
@@ -27,11 +27,12 @@ export const DebatePortrait: React.FC<z.infer<typeof videoSchema>> = ({
     return (
         <AbsoluteFill style={{ backgroundColor: background.color, fontFamily }}>
             {background.video?.src ? (
-                <LoopableOffthreadVideo
+                <Video
                     src={staticFile(background.video.src)}
                     loop
                     muted
                     className="absolute w-full h-full object-cover"
+                    style={{ objectFit: "cover" }}
                 />
             ) : background.gif?.src ? (
                 <Img
@@ -95,11 +96,12 @@ export const DebatePortrait: React.FC<z.infer<typeof videoSchema>> = ({
                                         className="w-full h-full object-contain"
                                     />
                                 ) : (
-                                    <LoopableOffthreadVideo
+                                    <Video
                                         src={staticFile(segment.mediaSrc)}
                                         muted
                                         loop
                                         className="w-full h-full object-contain"
+                                        style={{ objectFit: "contain" }}
                                     />
                                 )}
                             </AbsoluteFill>

@@ -19,8 +19,19 @@ export class FishAudioTTSClient implements TTSClient {
         const finalFileName = `audio-${id}.mp3`;
         const filePath = path.join(publicDir, finalFileName);
 
+        const groupedSegments = script.reduce((acc, segment) => {
+            const lastSegment = acc.at(-1);
+            if (lastSegment?.speaker === segment.speaker) {
+                lastSegment.text += ` ${segment.text}`;
+            } else {
+                acc.push({ speaker: segment.speaker, text: segment.text });
+            }
+
+            return acc;
+        }, [] as { speaker: Speaker, text: string }[]);
+
         const individualAudioFiles: string[] = [];
-        for (const segment of script) {
+        for (const segment of groupedSegments) {
             const { audioFileName } = await this.synthesize(segment.speaker, sanitizeText(segment.text));
             individualAudioFiles.push(path.join(publicDir, audioFileName));
         }

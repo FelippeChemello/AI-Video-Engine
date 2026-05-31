@@ -28,7 +28,18 @@ export class GrokClient implements LLMClient, TTSClient {
         const finalFileName = `audio-${id}.mp3`;
         const filePath = path.join(publicDir, finalFileName);
 
-        const individualAudioFiles: string[] = await Promise.all(script.map(async (segment, index) => {
+        const groupedSegments = script.reduce((acc, segment) => {
+            const lastSegment = acc.at(-1);
+            if (lastSegment?.speaker === segment.speaker) {
+                lastSegment.text += `\n${segment.text}`;
+            } else {
+                acc.push({ speaker: segment.speaker, text: segment.text });
+            }
+
+            return acc;
+        }, [] as { speaker: Speaker, text: string }[]);
+
+        const individualAudioFiles: string[] = await Promise.all(groupedSegments.map(async (segment, index) => {
             const { audioFileName } = await this.synthesize(segment.speaker, segment.text, `${id}-${index}`);
             return path.join(publicDir, audioFileName);
         }));

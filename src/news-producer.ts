@@ -52,7 +52,10 @@ const scripts: ScriptWithTitle[] = await Promise.all(
 
 await Promise.all(
     scripts.map(async (script) => {
-        const audio = await synthesizeSpeech(script.segments, script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined);
+        const audio = await synthesizeSpeech(
+            script.segments, 
+            { maxDurationInSeconds: script.compositions?.includes(Compositions.Portrait) ? MAX_AUDIO_DURATION_FOR_SHORTS : undefined }
+        );
         script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
     })
 );

@@ -10,7 +10,7 @@ import {
 import { useMemo } from "react";
 import { z } from "zod";
 import { loadFont } from "@remotion/google-fonts/TitanOne";
-import { Audio } from '@remotion/media'
+import { Audio, Video } from '@remotion/media'
 
 import { videoSchema, Viseme } from "../config/types";
 import CodyImg from "../../public/assets/cody.png";
@@ -18,7 +18,7 @@ import parseSentences from "./text-parser";
 import Text from "./Text";
 import { Felippe } from "./Felippe";
 import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
-import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
+
 import { ImageWithBackground } from "./ImageWithBackground";
 import { Background } from "./Background";
 import { Speaker } from "../clients/interfaces/TTS";
@@ -100,11 +100,12 @@ export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, bac
                     {mediaType === 'image' ? (
                       <ImageWithBackground src={staticFile(segment.mediaSrc)} />
                     ) : (
-                      <LoopableOffthreadVideo
+                      <Video
                         src={staticFile(segment.mediaSrc)}
                         muted
                         loop
                         className="w-full h-full object-contain"
+                        style={{ objectFit: "contain" }}
                       />
                     )}
                   </AbsoluteFill>
@@ -135,11 +136,12 @@ export const Landscape: React.FC<z.infer<typeof videoSchema>> = ({ segments, bac
                     {mediaType === 'image' ? (
                       <ImageWithBackground src={staticFile(segment.mediaSrc)} />
                     ) : (
-                      <LoopableOffthreadVideo
+                      <Video
                         src={staticFile(segment.mediaSrc)}
                         muted
                         loop
-                        className="w-full h-full object-contain"
+                        className="w-full h-full"
+                        style={{ objectFit: "contain" }}
                       />
                     )}
                   </AbsoluteFill>

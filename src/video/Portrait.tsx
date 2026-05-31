@@ -7,7 +7,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Audio } from '@remotion/media'
+import { Audio, Video } from '@remotion/media'
 import { useMemo } from "react";
 import { z } from "zod";
 import { loadFont } from "@remotion/google-fonts/TitanOne";
@@ -18,7 +18,7 @@ import CodyImg from "../../public/assets/cody.png";
 import parseSentences from "./text-parser";
 import Text from "./Text";
 import { getMimetypeFromFilename } from "../utils/get-mimetype-from-filename";
-import { LoopableOffthreadVideo } from "./LoopableOffthreadVideo";
+
 import { ImageWithBackground } from "./ImageWithBackground";
 import { Background } from "./Background";
 import { Speaker } from "../clients/interfaces/TTS";
@@ -122,11 +122,12 @@ export const Portrait: React.FC<z.infer<typeof videoSchema>> = ({ segments, back
                 {mediaType === 'image' ? (
                   <ImageWithBackground src={staticFile(segment.mediaSrc)} />
                 ) : (
-                  <LoopableOffthreadVideo
+                  <Video
                     src={staticFile(segment.mediaSrc)}
                     muted
                     loop
                     className="w-full h-full object-contain"
+                    style={{ objectFit: "contain" }}
                   />
                 )}
               </AbsoluteFill>

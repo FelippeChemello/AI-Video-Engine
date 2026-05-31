@@ -1,20 +1,21 @@
 {
-  "compilerOptions": {
-    "target": "ES2018",
-    "module": "ESNext",
-    "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "lib": [
-      "es2015"
-    ],
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUnusedLocals": true,
-    "moduleResolution": "bundler"
-  },
-  "exclude": [
-    "remotion.config.ts"
-  ]
+    "compilerOptions": {
+        "target": "ES2018",
+        "module": "ESNext",
+        "jsx": "react-jsx",
+        "strict": true,
+        "noEmit": true,
+        "lib": [
+            "es2015",
+            "DOM"
+        ],
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUnusedLocals": true,
+        "moduleResolution": "bundler"
+    },
+    "exclude": [
+        "remotion.config.ts"
+    ]
 }

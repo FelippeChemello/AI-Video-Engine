@@ -3,10 +3,11 @@ import fs from 'fs'
 import OpenAI from 'openai'
 import path from 'path';
 import { v4 } from 'uuid';
+import { getAudioDurationInSeconds } from "get-audio-duration";
 
 import { ENV } from '../config/env';
 import { outputDir, publicDir } from '../config/path';
-import { TTSClient, voices, Speaker } from './interfaces/TTS';
+import { TTSClient, voices, Speaker, SynthesizedAudio } from './interfaces/TTS';
 import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
@@ -21,7 +22,7 @@ const openai = new OpenAI({
 });
 
 export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient {
-    async synthesize(speaker: Speaker, text: string, id?: string | number) {
+    async synthesize(speaker: Speaker, text: string, id?: string | number): Promise<SynthesizedAudio> {
         console.log(`[OPENAI] Synthesizing speech for speaker: ${speaker}, text length: ${text.length}`);
         
         const [voice, voicePrompt] = voices[speaker].openai.split(' - ');
@@ -34,15 +35,19 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
         })
 
         const speechFile = `audio-${id ?? v4()}.mp3`;
+        const outputFilePath = path.join(publicDir, speechFile);
         const buffer = Buffer.from(await response.arrayBuffer());
-        fs.writeFileSync(path.join(publicDir, speechFile), buffer);
+        fs.writeFileSync(outputFilePath, buffer);
+
+        const durationInSeconds = await getAudioDurationInSeconds(outputFilePath);
 
         return {
             audioFileName: speechFile,
+            duration: durationInSeconds
         }
     }
 
-    async synthesizeScript(script: Script, id?: string | number) {
+    async synthesizeScript(script: Script, id?: string | number): Promise<SynthesizedAudio> {
         const audioFileName = `audio-${typeof id === 'undefined' ? v4() : id}.mp3`;
         const filePath = path.join(publicDir, audioFileName);
         
@@ -72,7 +77,10 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
         console.log(`[OPENAI] Merged audio file created`);
 
-        return { audioFileName }
+        return { 
+            audioFileName,
+            duration: audioResults.reduce((total, result) => total + (result.duration || 0), 0)
+        };
     }
 
     async generate({

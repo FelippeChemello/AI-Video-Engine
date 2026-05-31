@@ -2,7 +2,7 @@ import { Script } from "../../config/types";
 
 export type SynthesizedAudio = {
     audioFileName: string;
-    duration?: number;
+    duration: number;
 }
 
 export enum Speaker {

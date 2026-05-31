@@ -40,6 +40,9 @@ const envSchema = z.object({
     ELEVENLABS_API_KEY: z.string(),
 
     FISH_AUDIO_API_KEY: z.string(),
+
+    MODAL_TOKEN_ID: z.string(),
+    MODAL_TOKEN_SECRET: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -12,7 +12,7 @@ export function saveScriptFile(
     fs.writeFileSync(
         scriptTextFile,
         segments.map((s) => `${s.speaker}: ${s.text}`).join("\n"),
-        "utf-8",
+        "utf-8"
     );
     return scriptTextFile;
 }

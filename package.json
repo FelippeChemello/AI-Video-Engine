@@ -66,6 +66,7 @@
     "lucide-react": "^0.562.0",
     "matter-js": "^0.20.0",
     "mime": "^4.1.0",
+    "modal": "^0.7.6",
     "node-html-parser": "^7.0.1",
     "openai": "6.25.0",
     "puppeteer": "^24.16.2",
@@ -87,6 +88,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@ffprobe-installer/linux-x64",
+      "cbor-extract",
       "esbuild",
       "onnxruntime-node",
       "protobufjs",

@@ -41,7 +41,7 @@ for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
 
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
-    const audio = await synthesizeSpeech(script.segments, MAX_AUDIO_DURATION_FOR_SHORTS);
+    const audio = await synthesizeSpeech(script.segments, { maxDurationInSeconds: MAX_AUDIO_DURATION_FOR_SHORTS });
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     await Promise.all(
