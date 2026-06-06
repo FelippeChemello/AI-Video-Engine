@@ -13,6 +13,7 @@ import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { publicDir } from '../config/path';
 import { cleanupFiles } from '../services/cleanup-files';
 import { concatAudioFiles } from '../utils/concat-audio-files';
+import { retry } from '../utils/retry';
 
 const baseURL = 'https://api.x.ai/v1';
 
@@ -39,10 +40,12 @@ export class GrokClient implements LLMClient, TTSClient {
             return acc;
         }, [] as { speaker: Speaker, text: string }[]);
 
-        const individualAudioFiles: string[] = await Promise.all(groupedSegments.map(async (segment, index) => {
+        const individualAudioFiles: string[] = [];
+
+        for (const [index, segment] of groupedSegments.entries()) {
             const { audioFileName } = await this.synthesize(segment.speaker, segment.text, `${id}-${index}`);
-            return path.join(publicDir, audioFileName);
-        }));
+            individualAudioFiles.push(path.join(publicDir, audioFileName));
+        }
 
         await concatAudioFiles(individualAudioFiles, filePath);
         cleanupFiles(individualAudioFiles);
@@ -57,19 +60,33 @@ export class GrokClient implements LLMClient, TTSClient {
     async synthesize(voice: Speaker, text: string, id: string | number = v4()): Promise<SynthesizedAudio> {
         const voiceId = voices[voice].grok;
 
-        const response = await fetch(`${baseURL}/tts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ENV.GROK_API_KEY}`
+        const response = await retry(
+            () => {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 120000);
+
+                return fetch(`${baseURL}/tts`, {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ENV.GROK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        text,
+                        voice_id: voiceId,
+                        output_format: { codec: 'mp3', sample_rate: 44100, bit_rate: 128000 },
+                        language: 'pt-BR',
+                    })
+                }).finally(() => clearTimeout(timeout));
             },
-            body: JSON.stringify({
-                text,
-                voice_id: voiceId,
-                output_format: { codec: 'mp3', sample_rate: 44100, bit_rate: 128000 },
-                language: 'pt-BR',
-            })
-        });
+            {
+                label: `[GROK] TTS for speaker ${voice}`,
+                attempts: 3,
+                initialDelayMs: 1500,
+                timeoutMs: 125000,
+            }
+        );
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -81,7 +98,7 @@ export class GrokClient implements LLMClient, TTSClient {
         const audioFileName = `audio-${id}.mp3`;
         const filePath = `${publicDir}/${audioFileName}`
 
-        writeFileSync(filePath, audioBuffer, 'utf-8')
+        writeFileSync(filePath, audioBuffer)
 
         console.log(`[GROK] Audio synthesized successfully: ${filePath}`);
 

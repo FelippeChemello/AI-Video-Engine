@@ -40,10 +40,9 @@ const scripts: ScriptWithTitle[] = await Promise.all(
             agent: Agent.NEWSLETTER_WRITER, 
             prompt: `Crie um único script para um vídeo curto baseado na seguinte notícia: \n\n ${newsItem.headline}:\n ${newsItem.summary} \n\n A notícia é do site ${newsItem.source}.`
         });
-        return scriptText.scripts as ScriptWithTitle[];
+        return scriptText as ScriptWithTitle;
     })
 ).then(scriptsArrays => scriptsArrays
-    .flat()
     .map(script => ({
         ...script,
         compositions: [Compositions.Portrait],

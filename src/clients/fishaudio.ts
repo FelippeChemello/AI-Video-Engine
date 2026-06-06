@@ -9,6 +9,7 @@ import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { cleanupFiles } from '../services/cleanup-files';
 import { concatAudioFiles } from '../utils/concat-audio-files';
 import { sanitizeText } from '../utils/sanitize-text';
+import { retry } from '../utils/retry';
 
 const fishAudio = new FishAudioClient({ apiKey: ENV.FISH_AUDIO_API_KEY })
 
@@ -50,11 +51,19 @@ export class FishAudioTTSClient implements TTSClient {
         const voiceId = voices[voice].fishaudio;
         console.log(`[FISHAUDIO] Synthesizing speech for speaker: ${voice}`);
 
-        const audio = await fishAudio.textToSpeech.convert({
-            format: 'mp3',
-            text,
-            reference_id: [voiceId] as any,
-        })
+        const audio = await retry(
+            () => fishAudio.textToSpeech.convert({
+                format: 'mp3',
+                text,
+                reference_id: [voiceId] as any,
+            }),
+            {
+                label: `[FISHAUDIO] TTS for speaker ${voice}`,
+                attempts: 3,
+                initialDelayMs: 1500,
+                timeoutMs: 120000,
+            }
+        )
 
         const speechFile = `audio-${id}.mp3`;
         const filePath = path.join(publicDir, speechFile);

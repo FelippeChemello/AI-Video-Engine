@@ -3,6 +3,7 @@ import path from 'path';
 
 import { promptsDir } from '../../config/path';
 import { z } from 'zod';
+import { Speaker } from './TTS';
 
 export enum Agent {
     SCRIPT_WRITER = 'SCRIPT_WRITER',
@@ -85,16 +86,14 @@ export const Agents = {
             [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
-            scripts: z.array(z.object({
-                title: z.string(),
-                segments: z.array(z.object({
-                    speaker: z.enum(['Felippe', 'Cody']),
-                    text: z.string(),
-                    illustration: z.object({
-                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                        description: z.string(),
-                    }).optional().nullable(),
-                })),
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum(['Felippe', 'Cody']),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional().nullable(),
             })),
         }),
     },
@@ -108,17 +107,15 @@ export const Agents = {
             [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
-            scripts: z.array(z.object({
-                title: z.string(),
-                segments: z.array(z.object({
-                    speaker: z.enum(['Felippe', 'Cody']),
-                    text: z.string(),
-                    illustration: z.object({
-                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                        description: z.string(),
-                    }).optional().nullable(),
-                })),
-            }))
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum(['Felippe', 'Cody']),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional().nullable(),
+            })),
         })
     },
     TINDER_ROAST: {
@@ -171,17 +168,15 @@ export const Agents = {
             [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
-            scripts: z.array(z.object({
-                title: z.string(),
-                segments: z.array(z.object({
-                    speaker: z.enum(['Felippe', 'Cody']),
-                    text: z.string(),
-                    illustration: z.object({
-                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                        description: z.string(),
-                    }).optional().nullable(),
-                })),
-            }))
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum(['Felippe', 'Cody']),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional().nullable(),
+            })),
         })
     },
     NEWSLETTER_REVIEWER: {
@@ -194,17 +189,15 @@ export const Agents = {
             [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
-            scripts: z.array(z.object({
-                title: z.string(),
-                segments: z.array(z.object({
-                    speaker: z.enum(['Felippe', 'Cody']),
-                    text: z.string(),
-                    illustration: z.object({
-                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                        description: z.string(),
-                    }).optional().nullable(),
-                })),
-            }))
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum([Speaker.Felippe, Speaker.Cody]),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional(),
+            })),
         })
     },
     SEO_WRITER: {
@@ -275,17 +268,15 @@ export const Agents = {
             [LLMProvider.GROK]: GROK_DEFAULT_MODEL
         },
         outputStructure: z.object({
-            scripts: z.array(z.object({
-                title: z.string(),
-                segments: z.array(z.object({
-                    speaker: z.enum(['Priest']),
-                    text: z.string(),
-                    illustration: z.object({
-                        type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                        description: z.string(),
-                    }).optional().nullable(),
-                })),
-            }))
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum([Speaker.Priest]),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional(),
+            })),
         })
     },
 } satisfies Record<Agent, AgentConfig>;

@@ -29,44 +29,40 @@ const newsletter: { title: string; content: string } = newsletterFile
     : await gmail.fetchContent(NewsletterSource.FILIPE_DESCHAMPS);
 
 console.log(`Writing script based on newsletter ${newsletter.title}...`);
-const scriptText = await generateLLMResponse({
+const script = await generateLLMResponse({
     agent: Agent.NEWSLETTER_WRITER,
     prompt: `${newsletter.title}\n\n${newsletter.content}`
+}) as ScriptWithTitle;
+
+console.log(`Processing script: ${script.title}`);
+
+const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
+
+const audio = await synthesizeSpeech(script.segments, { maxDurationInSeconds: MAX_AUDIO_DURATION_FOR_SHORTS });
+script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
+
+await Promise.all(
+    script.segments.map(async (segment) => {
+        const mediaSrc = segment.illustration && await generateIllustration({
+            description: segment.illustration.description,
+            type: segment.illustration.type,
+            context: segment.text
+        });
+        segment.mediaSrc = mediaSrc;
+    })
+);
+
+await scriptManagerClient.saveScript({
+    script, 
+    formats: ENABLED_FORMATS, 
+    scriptSrc: path.basename(scriptTextFile),
+    channels: CHANNELS,
 });
 
-const scripts: ScriptWithTitle | ScriptWithTitle[] = scriptText.scripts as ScriptWithTitle | ScriptWithTitle[];
-
-for (const script of Array.isArray(scripts) ? scripts : [scripts]) {
-    console.log(`Processing script: ${script.title}`);
-
-    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
-
-    const audio = await synthesizeSpeech(script.segments, { maxDurationInSeconds: MAX_AUDIO_DURATION_FOR_SHORTS });
-    script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
-
-    await Promise.all(
-        script.segments.map(async (segment) => {
-            const mediaSrc = segment.illustration && await generateIllustration({
-                description: segment.illustration.description,
-                type: segment.illustration.type,
-                context: segment.text
-            });
-            segment.mediaSrc = mediaSrc;
-        })
-    );
-
-    await scriptManagerClient.saveScript({
-        script, 
-        formats: ENABLED_FORMATS, 
-        scriptSrc: path.basename(scriptTextFile),
-        channels: CHANNELS,
-    });
-
-    cleanupFiles([
-        scriptTextFile,
-        ...script.audio!.map(a => path.join(publicDir, a.src)),
-        ...script.segments
-            .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
-            .filter(Boolean) as Array<string>
-    ])
-}
+cleanupFiles([
+    scriptTextFile,
+    ...script.audio!.map(a => path.join(publicDir, a.src)),
+    ...script.segments
+        .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
+        .filter(Boolean) as Array<string>
+])

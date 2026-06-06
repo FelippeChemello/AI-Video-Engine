@@ -27,7 +27,7 @@ const ENABLED_FORMATS: Array<Compositions> = [
     ...(Math.random() < CHANCES_OF_VIDEO ? [Compositions.ReligiousPortraitVideo] : [Compositions.ReligiousPortrait]),
 ];
 const compositionVideoLengthMap: Partial<Record<Compositions, string>> = {
-    [Compositions.ReligiousPortraitVideo]: '1 minuto',
+    [Compositions.ReligiousPortraitVideo]: '30/45 segundos',
     [Compositions.ReligiousPortrait]: '2 minutos',
     [Compositions.ReligiousLandscape]: '8 minutos'
 };
@@ -40,17 +40,18 @@ if (!topic) {
 }
 
 const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(async composition => {
-    console.log(`Writing ${composition} script based on research...`);
+    console.log(`Writing ${composition} script ${groundingFilePath ? `with grounding file ${groundingFilePath}` : 'without grounding file'}...`);
     const fullScript = await generateLLMResponse({
         agent: Agent.RELIGIOUS_UMBANDA_WRITER, 
         prompt: `Tópico/Pergunta: ${topic} ${groundingFilePath && "\n\n Utilize o documento em anexo como contexto para escrever um roteiro de vídeo, porém nunca referencie o mesmo, seu roteiro deve ser autoral sem referências a documentos externos!\n\n."} O roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`,
         filesSrc: groundingFilePath ? [groundingFilePath] : undefined,
     });
 
-    return fullScript.scripts.map(script => ({
-        ...script,
-        compositions: [composition]
-    })) as Array<ScriptWithTitle>;
+    return {
+        title: fullScript.title,
+        segments: fullScript.segments,
+        compositions: [composition],
+    } satisfies ScriptWithTitle;
 })).then(scripts => scripts.flat());
 
 for (const script of scripts) {
@@ -61,7 +62,7 @@ for (const script of scripts) {
             script.segments.map(async (segment) => {
                 const mediaSrc = segment.illustration && await generateIllustration({ 
                     description: segment.illustration.description, 
-                    type: segment.illustration.type, 
+                    type: segment.illustration.type,
                     context: segment.text
                 });
                 segment.mediaSrc = mediaSrc;
@@ -82,11 +83,12 @@ for (const script of scripts) {
     script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 
     let videoFileName: string | undefined = undefined;
+    let firstFrame: string | undefined = undefined;
     if (script.compositions?.includes(Compositions.ReligiousPortraitVideo)) {
-        const firstFrame = await generateIllustration({
+        firstFrame = await generateIllustration({
             type: 'image_generation',
             description: `Using the reference image, create a portrait-oriented image that plays with the theme of the video, changing the clothes and the accessories of the person in the reference image to match the theme of the video that is umbanda related "${topic}". The image should be visually striking and relevant to the video's topic. The image must not include any text, logos, watermarks, signatures or any other person than the one in the reference image. It should be in the same style as the reference image, but with a different composition and elements that evoke the theme of the video. The background should be simple and not distract from the main subject and the body should be visible from the waist up. The person in the image should be looking directly at the camera with a confident and engaging expression.`,
-            imageSrc: path.join(publicDir, 'assets', 'umbandista.png'),
+            imageSrc: path.join(publicDir, 'assets', 'umbandista-ref-merged.png'),
         });
 
         if (!firstFrame) {
@@ -115,6 +117,7 @@ for (const script of scripts) {
     cleanupFiles([
         scriptTextFile,
         videoFileName ? path.join(outputDir, videoFileName) : null,
+        firstFrame ? path.join(publicDir, firstFrame) : null,
         ...(thumbnails || []).map(t => path.join(outputDir, t)),
         ...script.audio!.map(a => path.join(publicDir, a.src)),
         ...script.segments

@@ -45,10 +45,11 @@ const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(as
         prompt: `Tópico: ${topic}\n\n Utilize o seguinte contexto para escrever um roteiro de vídeo:\n\n${research.research}. \n\nO roteiro deve ter duração de aproximadamente ${compositionVideoLengthMap[composition]}!!!`
     });
 
-    return scriptText.scripts.map(script => ({
-        ...script,
-        compositions: [composition]
-    })) as Array<ScriptWithTitle>;
+    return {
+        title: scriptText.title,
+        segments: scriptText.segments as ScriptWithTitle['segments'],
+        compositions: [composition],
+    } satisfies ScriptWithTitle;
 })).then(scripts => scripts.flat());
 
 for (const script of scripts) {

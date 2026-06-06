@@ -1,22 +1,18 @@
 import fs from "fs";
 import path from "path";
 
-import { GeminiClient } from "../clients/gemini";
 import { SynthesizedAudio, TTSClient } from "../clients/interfaces/TTS";
 import { publicDir } from "../config/path";
 import { ScriptWithTitle } from "../config/types";
 import { FFmpegClient } from "../clients/ffmpeg";
 import { AudioEditorClient } from "../clients/interfaces/AudioEditor";
 import { FishAudioTTSClient } from "../clients/fishaudio";
-import { OpenAIClient } from "../clients/openai";
 import { QwenClient } from "../clients/qwen";
 import { GrokClient } from "../clients/grok";
 import { v4 } from "uuid";
 
 const qwen: TTSClient = new QwenClient();
-const gemini: TTSClient = new GeminiClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
-const openai: TTSClient = new OpenAIClient();
 const grok: TTSClient = new GrokClient();
 const editor: AudioEditorClient = new FFmpegClient();
 
@@ -30,7 +26,7 @@ export async function synthesizeSpeech(
     segments: ScriptWithTitle['segments'],
     { 
         maxDurationInSeconds, 
-        engines = [grok, fishaudio, gemini, openai, qwen],
+        engines = [grok, fishaudio, qwen],
         singleFileExport = true
     }: SynthesizeSpeechOptions = {}
 ): Promise<SynthesizedAudio> {

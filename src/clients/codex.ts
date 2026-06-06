@@ -353,13 +353,12 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                             ...(baseImageSrc ? [{ 
                                 type: 'input_image', 
                                 image_url: `data:image/png;base64,${fs.readFileSync(baseImageSrc).toString('base64')}`, 
-                                detail: 'low' 
-                                }] : [])
+                            }] : [])
                         ] 
                     }],
                 tools: [{ 
                     type: 'image_generation', 
-                    quality: 'low', 
+                    quality: 'high', 
                     model: 'gpt-image-2',
                     ...config,
                 }],
