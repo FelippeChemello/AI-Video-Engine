@@ -29,7 +29,7 @@ const ENABLED_FORMATS: Array<Compositions> = [
 const compositionVideoLengthMap: Partial<Record<Compositions, string>> = {
     [Compositions.ReligiousPortraitVideo]: '30/45 segundos',
     [Compositions.ReligiousPortrait]: '2 minutos',
-    [Compositions.ReligiousLandscape]: '8 minutos'
+    [Compositions.ReligiousLandscape]: '5 minutos'
 };
 
 const topic = process.argv[2]

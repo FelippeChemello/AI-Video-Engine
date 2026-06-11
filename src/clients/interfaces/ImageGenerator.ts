@@ -29,8 +29,8 @@ export type ThumbnailParams = {
 
 export const channelThumbnailConfig: { [key in Channels]: null | { prompter: (videoTitle: string) => string, imageBaseSrc: string } } = {
     [Channels.CODESTACK]: {
-        prompter: (videoTitle: string) => `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}".`,
-        imageBaseSrc: path.resolve(publicDir, 'assets', 'felippe.png'),
+        prompter: (videoTitle: string) => `A imagem de referência é uma ilustração de Felippe, use-a como base para criar a thumbnail. \n\n Gere uma thumbnail para o vídeo sobre o seguinte assunto "${videoTitle}". Use quantidade minima de texto`,
+        imageBaseSrc: path.resolve(publicDir, 'assets', 'felippe-ref.png'),
     },
     [Channels.RED_FLAG_RADAR]: null,
     [Channels.ALMA_DE_TERREIRO]: {

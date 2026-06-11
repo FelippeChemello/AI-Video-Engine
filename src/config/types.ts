@@ -3,10 +3,6 @@ import { z } from "zod";
 import { Speaker } from "../clients/interfaces/TTS";
 
 export enum Compositions {
-    // Dialogue
-    Portrait = 'Portrait',
-    Landscape = 'Landscape',
-
     // Debate
     DebatePortrait = 'DebatePortrait',
     DebateLandscape = 'DebateLandscape',
@@ -18,6 +14,9 @@ export enum Compositions {
     ReligiousPortrait = 'ReligiousPortrait',
     ReligiousLandscape = 'ReligiousLandscape',
     ReligiousPortraitVideo = 'ReligiousPortraitVideo',
+
+    // Tech
+    TechPortraitVideo = 'TechPortraitVideo',
 }
 
 export enum Orientation {
@@ -32,8 +31,7 @@ export enum Channels {
 }
 
 export const compositionOrientationMap: { [key in Compositions]: Orientation } = {
-    [Compositions.Portrait]: Orientation.PORTRAIT,
-    [Compositions.Landscape]: Orientation.LANDSCAPE,
+    [Compositions.TechPortraitVideo]: Orientation.PORTRAIT,
     [Compositions.DebatePortrait]: Orientation.PORTRAIT,
     [Compositions.DebateLandscape]: Orientation.LANDSCAPE,
     [Compositions.TinderRoast]: Orientation.PORTRAIT,

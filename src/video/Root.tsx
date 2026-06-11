@@ -4,9 +4,7 @@ import { Composition, random, staticFile } from "remotion";
 import { v4 } from "uuid";
 import { z } from "zod";
 
-import { Landscape } from "./Landscape";
 import { videoSchema } from "../config/types";
-import { Portrait } from "./Portrait";
 import { DebatePortrait } from "./DebatePortrait";
 import { DebateLandscape } from "./DebateLandscape";
 import { Tinder } from "./Tinder";
@@ -14,6 +12,7 @@ import { ReligiousPortrait } from "./ReligiousPortrait";
 import { ReligiousLandscape } from "./ReligiousLandscape";
 import { sanitizeText } from "../utils/sanitize-text";
 import { ReligiousPortraitVideo } from "./ReligiousPortraitVideo";
+import { TechPortraitVideo } from "./TechPortraitVideo";
 
 const FPS = 30;
 
@@ -110,28 +109,6 @@ export const RemotionRoot: React.FC = () => {
     return (
         <>
             <Composition
-                id="Landscape"
-                component={Landscape}
-                durationInFrames={1}
-                fps={FPS}
-                width={1920}
-                height={1080}
-                schema={videoSchema}
-                defaultProps={defaultProps}
-                calculateMetadata={calculateMetadata}
-            />
-            <Composition
-                id="Portrait"
-                component={Portrait}
-                durationInFrames={1}
-                fps={FPS}
-                width={1080}
-                height={1920}
-                schema={videoSchema}
-                defaultProps={defaultProps}
-                calculateMetadata={calculateMetadata}
-            />
-            <Composition
                 id="DebatePortrait"
                 component={DebatePortrait}
                 durationInFrames={1}
@@ -189,6 +166,17 @@ export const RemotionRoot: React.FC = () => {
             <Composition
                 id="ReligiousPortraitVideo"
                 component={ReligiousPortraitVideo}
+                durationInFrames={1}
+                fps={FPS}
+                width={1080}
+                height={1920}
+                schema={videoSchema}
+                defaultProps={defaultProps}
+                calculateMetadata={calculateMetadata}
+            />
+            <Composition
+                id="TechPortraitVideo"
+                component={TechPortraitVideo}
                 durationInFrames={1}
                 fps={FPS}
                 width={1080}

@@ -6,16 +6,8 @@ import { z } from 'zod';
 import { Speaker } from './TTS';
 
 export enum Agent {
-    SCRIPT_WRITER = 'SCRIPT_WRITER',
-    SCRIPT_REVIEWER = 'SCRIPT_REVIEWER',
-    RESEARCHER = 'RESEARCHER',
-
     SEO_WRITER = 'SEO_WRITER',
     MERMAID_GENERATOR = 'MERMAID_GENERATOR',
-    NEWS_RESEARCHER = 'NEWS_RESEARCHER',
-
-    NEWSLETTER_WRITER = 'NEWSLETTER_WRITER',
-    NEWSLETTER_REVIEWER = 'NEWSLETTER_REVIEWER',
 
     DEBATE_COUNCIL = 'DEBATE_COUNCIL',
     DEBATE = 'DEBATE',
@@ -23,6 +15,8 @@ export enum Agent {
     TINDER_ROAST = 'TINDER_ROAST',
 
     RELIGIOUS_UMBANDA_WRITER = 'RELIGIOUS_UMBANDA_WRITER',
+
+    TECH_WRITER = 'TECH_WRITER'
 }
 
 export enum LLMProvider {
@@ -39,94 +33,24 @@ type AgentConfig = {
     outputStructure: z.ZodTypeAny;
 }
 
-export const OPENAI_DEFAULT_MODEL = 'gpt-5.4';
+export const OPENAI_DEFAULT_MODEL = 'gpt-5.5';
 export const CODEX_DEFAULT_MODEL = 'gpt-5.5';
 export const ANTHROPIC_DEFAULT_MODEL = 'claude-haiku-4-5';
 export const GEMINI_DEFAULT_MODEL = 'gemini-3.1-pro-preview';
 export const GROK_DEFAULT_MODEL = 'grok-4.3';
 
+const model: { [K in LLMProvider]: string } = {
+    [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
+    [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
+    [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
+    [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
+    [LLMProvider.GROK]: GROK_DEFAULT_MODEL
+}
+
 export const Agents = {
-    RESEARCHER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'researcher.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL,
-        },
-        outputStructure: z.object({
-            research: z.string(),
-        }),
-    },
-    NEWS_RESEARCHER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'news-researcher.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
-        outputStructure: z.object({
-            news: z.array(z.object({
-                headline: z.string(),
-                summary: z.string(),
-                source: z.string(),
-            })),
-        }),
-    },
-    NEWSLETTER_WRITER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-writer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
-        outputStructure: z.object({
-            title: z.string(),
-            segments: z.array(z.object({
-                speaker: z.enum(['Felippe', 'Cody']),
-                text: z.string(),
-                illustration: z.object({
-                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                    description: z.string(),
-                }).optional().nullable(),
-            })),
-        }),
-    },
-    SCRIPT_WRITER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'writer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
-        outputStructure: z.object({
-            title: z.string(),
-            segments: z.array(z.object({
-                speaker: z.enum(['Felippe', 'Cody']),
-                text: z.string(),
-                illustration: z.object({
-                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                    description: z.string(),
-                }).optional().nullable(),
-            })),
-        })
-    },
     TINDER_ROAST: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'tinder-roasting-story-writer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
           meta: z.object({
             video_title: z.string(),
@@ -158,57 +82,9 @@ export const Agents = {
           })
         })
     },
-    SCRIPT_REVIEWER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'reviewer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
-        outputStructure: z.object({
-            title: z.string(),
-            segments: z.array(z.object({
-                speaker: z.enum(['Felippe', 'Cody']),
-                text: z.string(),
-                illustration: z.object({
-                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                    description: z.string(),
-                }).optional().nullable(),
-            })),
-        })
-    },
-    NEWSLETTER_REVIEWER: {
-        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'newsletter-reviewer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
-        outputStructure: z.object({
-            title: z.string(),
-            segments: z.array(z.object({
-                speaker: z.enum([Speaker.Felippe, Speaker.Cody]),
-                text: z.string(),
-                illustration: z.object({
-                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
-                    description: z.string(),
-                }).optional(),
-            })),
-        })
-    },
     SEO_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'seo.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
             title: z.string(),
             description: z.string(),
@@ -218,39 +94,21 @@ export const Agents = {
     },
     MERMAID_GENERATOR: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'mermaid-generator.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
             mermaid: z.string(),
         }),
     },
     DEBATE: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
             position: z.string(),
         })
     },
     DEBATE_COUNCIL: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'debate-council.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
             title: z.string(),
             winner: z.enum(['Gemini', 'Grok', 'Claude', 'ChatGPT']).optional().nullable(),
@@ -260,13 +118,7 @@ export const Agents = {
     },
     RELIGIOUS_UMBANDA_WRITER: {
         systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'religious-umbanda-writer.md'), 'utf-8'),
-        model: {
-            [LLMProvider.OPENAI]: OPENAI_DEFAULT_MODEL,
-            [LLMProvider.CODEX]: CODEX_DEFAULT_MODEL,
-            [LLMProvider.ANTHROPIC]: ANTHROPIC_DEFAULT_MODEL,
-            [LLMProvider.GEMINI]: GEMINI_DEFAULT_MODEL,
-            [LLMProvider.GROK]: GROK_DEFAULT_MODEL
-        },
+        model,
         outputStructure: z.object({
             title: z.string(),
             segments: z.array(z.object({
@@ -279,6 +131,21 @@ export const Agents = {
             })),
         })
     },
+    TECH_WRITER: {
+        systemPrompt: fs.readFileSync(path.resolve(promptsDir, 'tech-writer.md'), 'utf-8'),
+        model,
+        outputStructure: z.object({
+            title: z.string(),
+            segments: z.array(z.object({
+                speaker: z.enum([Speaker.Felippe]),
+                text: z.string(),
+                illustration: z.object({
+                    type: z.enum(['query', 'image_generation', 'mermaid', 'code']),
+                    description: z.string(),
+                }).optional(),
+            })),
+        })
+    }
 } satisfies Record<Agent, AgentConfig>;
 
 export type AgentOutput<T extends Agent> = z.infer<typeof Agents[T]['outputStructure']>;

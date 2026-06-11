@@ -7,13 +7,11 @@ import { outputDir, publicDir } from './config/path';
 import { ScriptManagerClient } from './clients/interfaces/ScriptManager';
 import { NotionClient } from './clients/notion';
 import { AudioAlignerClient } from './clients/interfaces/AudioAligner';
-import { MFAClient } from './clients/mfa';
 import { VideoRendererClient } from './clients/interfaces/VideoRenderer';
 import { RemotionClient } from './clients/remotion';
 import { VideoEditorClient } from './clients/interfaces/VideoEditor';
 import { FFmpegClient } from './clients/ffmpeg';
 import { AeneasClient } from './clients/aeneas';
-import { compositionShouldAlignVisemes, VisemeAlignerClient } from './clients/interfaces/VisemeAligner';
 import { AudioEditorClient } from './clients/interfaces/AudioEditor';
 import { VideoUploaderClient } from './clients/interfaces/VideoUploader';
 import { Youtube } from './clients/youtube';
@@ -32,7 +30,6 @@ const MAX_SIZE_THUMBNAIL_IN_MB = 2;
 
 const defaultScriptManager: ScriptManagerClient = new NotionClient(ENV.NOTION_DEFAULT_DATABASE_ID);
 const audioAligner: AudioAlignerClient = new AeneasClient();
-const visemeAligner: VisemeAlignerClient = new MFAClient();
 const renderer: VideoRendererClient = new RemotionClient();
 const editor: VideoEditorClient & AudioEditorClient = new FFmpegClient();
 const youtube: VideoUploaderClient = new Youtube();
@@ -106,19 +103,6 @@ for (const scriptIndex in scripts) {
 
             script.audio[audioIndex].alignment = audioAligned.alignment;
             script.audio[audioIndex].duration = audioAligned.duration;
-
-            if (script.compositions.some(comp => compositionShouldAlignVisemes[comp])) {
-                console.log(`Aligning visemes for script ${script.title}...`);
-                const { visemes } = await visemeAligner.alignViseme({
-                    audio: {
-                        filepath: audioFilePath,
-                        mimeType: audioMimeType!
-                    },
-                    text: fullText
-                });
-
-                script.audio[audioIndex].visemes = visemes;
-            }
         }
 
         const scriptFileName = `script-${script.id}.json`;
