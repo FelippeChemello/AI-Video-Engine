@@ -24,7 +24,7 @@ export async function saveWaveFile(filePath: string, audioBuffer: Buffer, channe
 }
 
 interface WavConversionOptions {
-  numChannels : number,
+  numChannels: number,
   sampleRate: number,
   bitsPerSample: number
 }
@@ -37,30 +37,38 @@ export function convertToWav(rawData: string, mimeType: string) {
   return Buffer.concat([wavHeader, buffer]);
 }
 
-function parseMimeType(mimeType : string) {
+function parseMimeType(mimeType: string) {
   const [fileType, ...params] = mimeType.split(';').map(s => s.trim());
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, format] = fileType.split('/');
+  const format = fileType.split('/')[1];
 
-  const options : Partial<WavConversionOptions> = {
+  const options: WavConversionOptions = {
     numChannels: 1,
+    sampleRate: 24000,
+    bitsPerSample: 16,
   };
 
-  if (format && format.startsWith('L')) {
-    const bits = parseInt(format.slice(1), 10);
-    if (!isNaN(bits)) {
+  const linearPcmMatch = format?.match(/^L(\d+)$/i);
+  if (linearPcmMatch) {
+    const bits = Number.parseInt(linearPcmMatch[1], 10);
+    if (Number.isInteger(bits) && bits > 0) {
       options.bitsPerSample = bits;
     }
   }
 
   for (const param of params) {
     const [key, value] = param.split('=').map(s => s.trim());
-    if (key === 'rate') {
-      options.sampleRate = parseInt(value, 10);
+    const parsedValue = Number.parseInt(value, 10);
+
+    if (key.toLowerCase() === 'rate' && Number.isInteger(parsedValue) && parsedValue > 0) {
+      options.sampleRate = parsedValue;
+    }
+
+    if (key.toLowerCase() === 'channels' && Number.isInteger(parsedValue) && parsedValue > 0) {
+      options.numChannels = parsedValue;
     }
   }
 
-  return options as WavConversionOptions;
+  return options;
 }
 
 function createWavHeader(dataLength: number, options: WavConversionOptions) {

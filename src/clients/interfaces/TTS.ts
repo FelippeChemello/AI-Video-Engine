@@ -6,7 +6,6 @@ export type SynthesizedAudio = {
 }
 
 export enum Speaker {
-    Cody = 'Cody',
     Felippe = 'Felippe',
 
     Narrator = 'Narrator',
@@ -30,14 +29,6 @@ enum VoiceProvider {
 }
 
 export const voices: { [speaker in Speaker]: { [provider in VoiceProvider]: string } } = {
-    Cody: {
-        [VoiceProvider.ELEVENLABS]: 'PoHUWWWMHFrA8z7Q88pu',
-        [VoiceProvider.OPENAI]: 'coral - Male, Brazilian, Bright, energetic, neutral accent with playful tones and friendly curiosity. Inquisitive and slightly excitable, genuinely amazed and eager to learn about new things. Very Quick Pace, spontaneous questions with natural enthusiasm, balanced by moments of thoughtful curiosity.', 
-        [VoiceProvider.QWEN_TTS]: 'Cody',
-        [VoiceProvider.GEMINI]: 'Puck',
-        [VoiceProvider.FISH_AUDIO]: '2d8b7dcacb2345aabf25862f3f2ce2bd',
-        [VoiceProvider.GROK]: 'ara',
-    },
     Felippe: {
         [VoiceProvider.ELEVENLABS]: '7u8qsX4HQsSHJ0f8xsQZ',
         [VoiceProvider.OPENAI]: 'ash - Male, Brazilian, Bright, energetic, young, neutral accent, sophisticated, with clear articulation. Slightly professorial, speaking with pride and confidence in his vast knowledge, yet always approachable. Clearly articulate Portuguese and technical terms authentically. Very Fast Paced.',

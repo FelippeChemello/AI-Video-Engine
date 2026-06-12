@@ -15,10 +15,13 @@ import { MAX_AUDIO_DURATION_FOR_SHORTS } from './config/constants';
 import { generateLLMResponse } from './services/generate-llm-response';
 import { GPURunnerClient } from './clients/interfaces/GPURunner';
 import { Modal } from './clients/modal';
+import { TTSClient } from './clients/interfaces/TTS';
+import { GeminiClient } from './clients/gemini';
 
 const CHANNELS = [Channels.CODESTACK]
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
+const gemini: TTSClient = new GeminiClient()
 const modal: GPURunnerClient = new Modal();
 
 const topic = process.argv[2]
@@ -37,7 +40,6 @@ const script: ScriptWithTitle = {
     compositions: [Compositions.TechPortraitVideo]
 }
 
-
 const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
 await Promise.all(
@@ -55,7 +57,10 @@ const thumbnails = await generateThumbnails({
 
 const audio = await synthesizeSpeech(
     script.segments,
-    { maxDurationInSeconds: MAX_AUDIO_DURATION_FOR_SHORTS }
+    { 
+        maxDurationInSeconds: MAX_AUDIO_DURATION_FOR_SHORTS,
+        engines: [gemini]
+    }
 );
 script.audio = [{ src: audio.audioFileName, duration: audio.duration }];
 

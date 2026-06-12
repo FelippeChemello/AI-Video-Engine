@@ -6,7 +6,6 @@ import { Speaker } from "../clients/interfaces/TTS";
 
 export const speakerMap: Record<Speaker, { color: string, icon: string }> = {
   Felippe: { color: "#00a6f4", icon: "assets/felippe.png" },
-  Cody: { color: "#fd9a00", icon: "assets/cody.png" },
   ChatGPT: { color: "#74AA9C", icon: "assets/chatgpt.png" },
   Claude: { color: "#C15F3C", icon: "assets/claude.png" },
   Gemini: { color: "#4285f4", icon: "assets/gemini.png" },

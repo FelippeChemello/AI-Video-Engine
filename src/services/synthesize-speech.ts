@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { v4 } from "uuid";
 
 import { SynthesizedAudio, TTSClient } from "../clients/interfaces/TTS";
 import { publicDir } from "../config/path";
@@ -9,11 +10,12 @@ import { AudioEditorClient } from "../clients/interfaces/AudioEditor";
 import { FishAudioTTSClient } from "../clients/fishaudio";
 import { QwenClient } from "../clients/qwen";
 import { GrokClient } from "../clients/grok";
-import { v4 } from "uuid";
+import { GeminiClient } from "../clients/gemini";
 
 const qwen: TTSClient = new QwenClient();
 const fishaudio: TTSClient = new FishAudioTTSClient();
 const grok: TTSClient = new GrokClient();
+const gemini: TTSClient = new GeminiClient()
 const editor: AudioEditorClient = new FFmpegClient();
 
 type SynthesizeSpeechOptions = {
@@ -26,7 +28,7 @@ export async function synthesizeSpeech(
     segments: ScriptWithTitle['segments'],
     { 
         maxDurationInSeconds, 
-        engines = [grok, fishaudio, qwen],
+        engines = [grok, fishaudio, qwen, gemini],
         singleFileExport = true
     }: SynthesizeSpeechOptions = {}
 ): Promise<SynthesizedAudio> {

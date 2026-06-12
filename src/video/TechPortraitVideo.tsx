@@ -2,7 +2,6 @@ import {
     AbsoluteFill,
     Sequence,
     staticFile,
-    useCurrentFrame,
     useVideoConfig,
 } from "remotion";
 import { z } from "zod";
@@ -19,7 +18,7 @@ const { fontFamily } = loadFont();
 
 const START_OFFSET = 1; // Number of frames to overlap between segments
 
-export const TechPortraitVideo: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, title, avatarVideoSrc }) => {
+export const TechPortraitVideo: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, avatarVideoSrc }) => {
     const { fps, durationInFrames } = useVideoConfig()
 
     return (

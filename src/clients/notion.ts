@@ -332,7 +332,7 @@ export class NotionClient implements ScriptManagerClient {
                 startCursor = response.next_cursor ?? undefined;
             }
 
-            let lastSpeaker: Speaker = Speaker.Cody;
+            let lastSpeaker: Speaker = Speaker.Felippe;
             if (blocks.results[0].type === 'paragraph' || blocks.results[0].type === 'column_list') {
                 let firstText = ""
                 switch (blocks.results[0].type) {
@@ -357,10 +357,6 @@ export class NotionClient implements ScriptManagerClient {
 
             for (const [blockIndex, block] of blocks.results.entries()) {
                 switch (block.type) {
-                    case 'divider':
-                        lastSpeaker = lastSpeaker === Speaker.Cody ? Speaker.Felippe : Speaker.Cody;
-                        break;
-
                     case 'paragraph':
                         const rawText = block.paragraph.rich_text.map((text) => text.type === 'text' ? text.text.content : '').join('\n');
                         if (rawText.trim() === '') {

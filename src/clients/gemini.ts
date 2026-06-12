@@ -17,12 +17,14 @@ import { titleToFileName } from '../utils/title-to-filename';
 import { convertToWav } from '../utils/save-wav-file';
 import { sleep } from '../utils/sleep';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
+import { concatAudioFiles } from '../utils/concat-audio-files';
+import { cleanupFiles } from '../services/cleanup-files';
 
-const genAIPro = new GoogleGenAI({ apiKey: ENV.GEMINI_PAID_API_KEY })
+const genAI = new GoogleGenAI({ apiKey: ENV.GEMINI_PAID_API_KEY })
 
 export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient {
-    async synthesize(speaker: Speaker, text: string, id?: string | number, customPrompt?: string): Promise<{ audioFileName: string; duration: number; }> {
-        const prompt = `Read aloud the following text in Brazilian Portuguese with the voice of ${speaker}: \n\n${text}`;
+    async synthesize(speaker: Speaker, text: string, id: string | number = v4(), customPrompt?: string): Promise<{ audioFileName: string; duration: number; }> {
+        const prompt = `Read the following transcript: \n\n${text}`;
 
         console.log(`[GEMINI] Synthesizing speech for speaker: ${speaker}`);
 
@@ -33,8 +35,8 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
         while (retries < maxRetries) {
             try {
-                const audioResult = await genAIPro.models.generateContent({
-                    model: 'gemini-2.5-pro-preview-tts',
+                const audioResult = await genAI.models.generateContent({
+                    model: 'gemini-3.1-flash-tts-preview',
                     contents: [{ parts: [{ text: customPrompt ? `${customPrompt}\n\n${prompt}` : prompt }] }],
                     config: {
                         temperature: 1,
@@ -89,86 +91,38 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         return { audioFileName, duration }
     }
 
-    async synthesizeScript(script: Script, id?: string | number): Promise<{ audioFileName: string; duration: number; }> {
-        const basePrompt = `Read aloud this conversation between Felippe and his dog Cody. Generate only the audio without any additional commentary or text. \nFelippe is known for his vast knowledge, and Cody is a curious dog who is always asking questions about the world, both are Brazilian Portuguese speakers and have a fast-paced, energetic, and enthusiastic way of speaking.`;
-        
-        const prompt = `${basePrompt}\n\n ${script.map((s) => `${s.speaker}: ${s.text}`).join('\n')}`;
-
-        console.log(`[GEMINI] Synthesizing script`);
-        
-        let data: string | undefined;
-        let mimeType: string | undefined;
-        const maxRetries = 3;
-        let retries = 0;
-
-        while (retries < maxRetries) {
-            try {
-                const audioResult = await genAIPro.models.generateContent({
-                    model: 'gemini-2.5-pro-preview-tts',
-                    contents: [{ parts: [{ text: prompt }] }],
-                    config: {
-                        responseModalities: ['audio'],
-                        speechConfig: {
-                            multiSpeakerVoiceConfig: {
-                                speakerVoiceConfigs: [
-                                    {
-                                        speaker: Speaker.Cody,
-                                        voiceConfig: {
-                                            prebuiltVoiceConfig: { voiceName: voices.Cody.gemini }
-                                        }
-                                    },
-                                    {
-                                        speaker: Speaker.Felippe,
-                                        voiceConfig: {
-                                            prebuiltVoiceConfig: { voiceName: voices.Felippe.gemini }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                })
-
-                data = audioResult.candidates?.[0].content?.parts?.[0]?.inlineData?.data
-                mimeType = audioResult.candidates?.[0].content?.parts?.[0]?.inlineData?.mimeType
+    async synthesizeScript(script: Script, id: string | number = v4()): Promise<{ audioFileName: string; duration: number; }> {
+        console.log(`[GEMINI] Synthesizing script with ${script.length} segments`);
                 
-                if (!data || !mimeType) {
-                    throw new Error('No audio data found in the response');
-                }
-                
-                break;
-            } catch (error) {
-                retries++;
-                console.log(`[GEMINI] Error synthesizing audio: ${error}. Retry ${retries}/${maxRetries}`);
-                
-                if (retries >= maxRetries) {
-                    throw new Error(`[GEMINI] Failed to synthesize audio after ${maxRetries} attempts`);
-                }
+        const finalFileName = `audio-${id}.mp3`;
+        const filePath = path.join(publicDir, finalFileName);
+
+        const groupedSegments = script.reduce((acc, segment) => {
+            const lastSegment = acc.at(-1);
+            if (lastSegment?.speaker === segment.speaker) {
+                lastSegment.text += `\n${segment.text}`;
+            } else {
+                acc.push({ speaker: segment.speaker, text: segment.text });
             }
+
+            return acc;
+        }, [] as { speaker: Speaker, text: string }[]);
+
+        const individualAudioFiles: string[] = [];
+
+        for (const [index, segment] of groupedSegments.entries()) {
+            const { audioFileName } = await this.synthesize(segment.speaker, segment.text, `${id}-${index}`);
+            individualAudioFiles.push(path.join(publicDir, audioFileName));
         }
 
-        if (!data || !mimeType) {
-            throw new Error('No audio data found after retries');
-        }
-
-        let audioBuffer = Buffer.from(data, 'base64')
-        let fileExtension = mime.getExtension(mimeType!)
-        if (!fileExtension) {
-            fileExtension = 'wav'
-            audioBuffer = convertToWav(data, mimeType!)
-        }
-
-        const audioFileName = `audio-${id ?? v4()}.${fileExtension}`;
-        const filePath = `${publicDir}/${audioFileName}`
-
-        writeFileSync(filePath, audioBuffer, 'utf-8')
-
-        console.log(`[GEMINI] Audio synthesized successfully: ${filePath}`);
+        await concatAudioFiles(individualAudioFiles, filePath);
+        cleanupFiles(individualAudioFiles);
 
         const duration = await getAudioDurationInSeconds(filePath);
-        console.log(`[GEMINI] Audio duration: ${duration}`);
-
-        return { audioFileName, duration }
+        return {
+            audioFileName: finalFileName,
+            duration
+        }
     }
 
     async generate({
@@ -180,7 +134,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         try {
             console.log(`[GEMINI] Generating image with prompt: ${prompt}`);
 
-            const imageResult = await genAIPro.models.generateContent({
+            const imageResult = await genAI.models.generateContent({
                 model: 'gemini-3.1-flash-image-preview',
                 contents: [
                     { text: prompt },
@@ -244,7 +198,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
         const img = customImage ? fs.readFileSync(customImage.src).toString('base64') : undefined
 
-        const imageResult = await genAIPro.models.generateContent({
+        const imageResult = await genAI.models.generateContent({
             model: 'gemini-3.1-flash-image-preview',
             contents: [
                 { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video, at same time simple and minimalist. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic.` },
@@ -319,7 +273,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                     }
                 })) : []
 
-                const response = await genAIPro.models.generateContent({
+                const response = await genAI.models.generateContent({
                     model: config.model.gemini,
                     contents: [
                         { text: typeof prompt === 'string' ? prompt : JSON.stringify(prompt) },
