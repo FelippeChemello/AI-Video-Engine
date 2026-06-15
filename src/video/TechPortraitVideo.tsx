@@ -16,8 +16,6 @@ import { ImageWithBackground } from "./ImageWithBackground";
 
 const { fontFamily } = loadFont();
 
-const START_OFFSET = 1; // Number of frames to overlap between segments
-
 export const TechPortraitVideo: React.FC<z.infer<typeof videoSchema>> = ({ segments, background, avatarVideoSrc }) => {
     const { fps, durationInFrames } = useVideoConfig()
 
@@ -33,7 +31,7 @@ export const TechPortraitVideo: React.FC<z.infer<typeof videoSchema>> = ({ segme
                 const { duration, alignment } = segment;
                 
                 const startFrame = index === 0 ? 0 : Math.max(0, segments.slice(0, index).reduce((acc, currentItem) => {
-                return acc + Math.ceil((currentItem.duration || 0) * fps) - START_OFFSET;
+                    return acc + Math.ceil((currentItem.duration || 0) * fps);
                 }, 0));
 
                 const sentences = parseSentences(alignment)

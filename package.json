@@ -5,6 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
+        "dev:save": "tsx --env-file .env src/save-on-notion.ts",
         "dev:debate": "tsx --env-file .env src/generate-debate.ts",
         "dev:tinder-roast": "tsx --env-file .env src/generate-tinder-roast.ts",
         "dev:umbanda": "tsx --env-file .env src/generate-religious.ts",

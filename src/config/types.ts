@@ -173,28 +173,57 @@ export type AudioScript = {
         end: number;
         text: string;
     }>;
-    visemes?: Array<{
-        start: number;
-        end: number;
-        viseme: string;
-    }>;
 }
 
-export type ScriptWithTitle = {
-    title: string;
-    segments: Script;
-} & {
-    id?: string;
-    audio?: Array<AudioScript>;
-    compositions?: Array<Compositions>;
-    background?: VideoBackground;
-    avatarVideoSrc?: string;
-    seo?: string;
-    settings?: any;
-    thumbnails?: Array<{ filename: string; src: string }>;
-    channels?: Array<Channels>;
-    date?: Date;
-}
+export const scriptWithTitleSchema = z.object({
+    title: z.string(),
+    segments: z.array(z.object({
+        text: z.string(),
+        speaker: z.nativeEnum(Speaker),
+        illustration: z.object({
+            type: z.union([z.literal('query'), z.literal('image_generation'), z.literal('mermaid'), z.literal('code')]),
+            description: z.string(),
+        }).optional(),
+        mediaSrc: z.string().optional(),
+    })),
+    id: z.string().optional(),
+    audio: z.array(z.object({
+        src: z.string(),
+        mimeType: z.string().optional(),
+        extension: z.string().optional(),
+        duration: z.number().optional(),
+        alignment: z.array(z.object({
+            start: z.number(),
+            end: z.number(),
+            text: z.string(),
+        })).optional(),
+    })).optional(),
+    compositions: z.array(z.nativeEnum(Compositions)).optional(),
+    background: z.object({
+        video: z.object({
+            src: z.string(),
+            initTime: z.number().optional(),
+        }).optional(),
+        gif: z.object({
+            src: z.string(),
+        }).optional(),
+        color: z.string().optional(),
+        mainColor: z.string().optional(),
+        secondaryColor: z.string().optional(),
+        seed: z.union([z.string(), z.number()]).optional(),
+    }).optional(),
+    avatarVideoSrc: z.string().optional(),
+    seo: z.string().optional(),
+    settings: z.any().optional(),
+    thumbnails: z.array(z.object({
+        filename: z.string(),
+        src: z.string(),
+    })).optional(),
+    channels: z.array(z.nativeEnum(Channels)).optional(),
+    date: z.date().optional(),
+});
+
+export type ScriptWithTitle = z.infer<typeof scriptWithTitleSchema>;
 
 export type SEO = {
     title: string;
@@ -248,16 +277,6 @@ export type AudioAlignerResponse = {
     duration: number;
 }
 
-export type AudioToVisemeResponse = {
-    visemes?: Array<{
-        start: number;
-        end: number;
-        viseme: string;
-    }>;
-}
-
-export type Viseme = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | undefined
-
 export const videoSchema = z.object({
   background: z.object({
     video: z.object({
@@ -292,11 +311,6 @@ export const videoSchema = z.object({
       start: z.number(),
       end: z.number(),
       text: z.string(),
-    })).optional(),
-    visemes: z.array(z.object({
-      start: z.number(),
-      end: z.number(),
-      viseme: z.string(),
     })).optional(),
   })),
   avatarVideoSrc: z.string().optional(),
