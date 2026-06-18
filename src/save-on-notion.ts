@@ -8,6 +8,7 @@ import { generateThumbnails } from './services/generate-thumbnails';
 import { generateIllustration } from './services/generate-illustration';
 import { saveScriptFile } from './services/save-script-file';
 import { titleToFileName } from './utils/title-to-filename';
+import { cleanupFiles } from './services/cleanup-files';
 
 interface RawArgs {
     [key: string]: string | boolean | string[];
@@ -220,56 +221,64 @@ if (errors.length > 0) {
     process.exit(1);
 }
 
-async function run() {
-    try {
-        const notionClient = new NotionClient();
+try {
+    const notionClient = new NotionClient();
 
-        const script: ScriptWithTitle = {
-            ...baseScript!,
-            audio: [{ src: audioSrc! }], 
-            channels: validatedChannels,
-            compositions: validatedFormats,
-        };
+    const script: ScriptWithTitle = {
+        ...baseScript!,
+        audio: [{ src: audioSrc! }], 
+        channels: validatedChannels,
+        compositions: validatedFormats,
+    };
 
-        let thumbnailsSrc: string[] | undefined;
-        if (shouldGenerateThumbnails) {
-            console.log(`Generating thumbnails for script "${baseScript?.title}"...`);
-            thumbnailsSrc = await generateThumbnails({
-                videoTitle: topic!,
-                compositions: script.compositions!, 
-                channels: script.channels!
-            })
-        }
-
-        if (shouldGenerateIllustrations) {
-            console.log(`Generating illustrations for script "${baseScript?.title}"...`);
-            await Promise.all(
-                script.segments.map(async (segment) => {
-                    const mediaSrc = segment.illustration && await generateIllustration({ 
-                        description: segment.illustration.description, 
-                        type: segment.illustration.type,
-                        context: segment.text
-                    });
-                    segment.mediaSrc = mediaSrc;
-                })
-            );
-        }
-
-        const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
-
-        await notionClient.saveScript({
-            script,
-            thumbnailsSrc,
-            formats: script.compositions!,
-            channels: script.channels!,
-            scriptSrc: path.basename(scriptTextFile),
-            avatarVideoSrc: avatarVideoSrc
+    let thumbnailsSrc: string[] | undefined;
+    if (shouldGenerateThumbnails) {
+        console.log(`Generating thumbnails for script "${baseScript?.title}"...`);
+        thumbnailsSrc = await generateThumbnails({
+            videoTitle: topic!,
+            compositions: script.compositions!, 
+            channels: script.channels!
         })
-        console.log(`\x1b[32m✔ Script "${baseScript?.title}" saved successfully on Notion!\x1b[0m`);
-    } catch (err: any) {
-        console.error(`\x1b[31mError saving to Notion:\x1b[0m`, err);
-        process.exit(1);
     }
-}
 
-run();
+    if (shouldGenerateIllustrations) {
+        console.log(`Generating illustrations for script "${baseScript?.title}"...`);
+        await Promise.all(
+            script.segments.map(async (segment) => {
+                const mediaSrc = segment.illustration && await generateIllustration({ 
+                    description: segment.illustration.description, 
+                    type: segment.illustration.type,
+                    context: segment.text
+                });
+                segment.mediaSrc = mediaSrc;
+            })
+        );
+    }
+
+    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
+
+    await notionClient.saveScript({
+        script,
+        thumbnailsSrc,
+        formats: script.compositions!,
+        channels: script.channels!,
+        scriptSrc: path.basename(scriptTextFile),
+        avatarVideoSrc: avatarVideoSrc
+    })
+    console.log(`\x1b[32m✔ Script "${baseScript?.title}" saved successfully on Notion!\x1b[0m`);
+
+    const filesToCleanup: string[] = [
+        scriptTextFile,
+        audioSrc ? path.resolve(publicDir, audioSrc) : null,
+        avatarVideoSrc ? path.resolve(outputDir, avatarVideoSrc) : null,
+        ...(thumbnailsSrc || []).map(t => path.join(outputDir, t)),
+        ...script.segments
+            .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
+            .filter(Boolean) as string[]
+    ].filter(Boolean) as string[];
+
+    cleanupFiles(filesToCleanup);
+} catch (err: any) {
+    console.error(`\x1b[31mError saving to Notion:\x1b[0m`, err);
+    process.exit(1);
+}
