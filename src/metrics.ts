@@ -7,4 +7,10 @@ import { outputDir } from './config/path';
 
 const tiktok: SocialMediaClient = new TiktokClient()
 
-fs.writeFileSync(path.resolve(outputDir, 'metrics.json'), JSON.stringify(await tiktok.getMetrics(), null, 2), 'utf-8')
+const handle = process.argv[2]
+if (!handle) {
+    console.error("Please provide a social media handle as a command line argument.")
+    process.exit(1);
+}
+
+fs.writeFileSync(path.resolve(outputDir, 'metrics.json'), JSON.stringify(await tiktok.getMetrics(handle), null, 2), 'utf-8')

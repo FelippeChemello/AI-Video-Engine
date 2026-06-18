@@ -36,8 +36,8 @@ export interface Entry {
 }
 
 export class TiktokClient implements SocialMediaClient {
-    async getMetrics(): Promise<Array<Metric>> {
-        const raw = await ytdlp("https://www.tiktok.com/@codestackme", {
+    async getMetrics(handle: string): Promise<Array<Metric>> {
+        const raw = await ytdlp(`https://www.tiktok.com/@${handle}`, {
             dumpSingleJson: true,
             noWarnings: true,
             skipDownload: true,

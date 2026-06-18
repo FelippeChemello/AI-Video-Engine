@@ -7,5 +7,5 @@ export type Metric = {
 }
 
 export interface SocialMediaClient {
-    getMetrics(): Promise<Array<Metric>>
+    getMetrics(handle: string): Promise<Array<Metric>>
 }
