@@ -1,0 +1,10 @@
+{
+    "preset": "default",
+    "aliases": {
+        "primitives": "./src/video",
+        "scenes": "./src/video",
+        "compositions": "./src/video",
+        "lib": "./src/video",
+        "hooks": "./src/video"
+    }
+}

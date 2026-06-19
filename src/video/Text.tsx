@@ -5,7 +5,7 @@ import React, {
     useCallback,
     useEffect,
 } from "react";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { sanitizeText } from "../utils/sanitize-text";
 
 interface TextProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -14,7 +14,54 @@ interface TextProps extends React.HTMLAttributes<HTMLDivElement> {
     alignedWords: Array<{ start: number; end: number; text: string }>;
     color?: string;
     highlightColor?: string;
+    fontWeight?: number | string;
+    /** Scale multiplier for the active word. 1 keeps color-only behavior. */
+    activeScale?: number;
+    /**
+     * Optional frame override.
+     * Pass a parent `frame` when using inside `<Sequence from={...}>`.
+     */
+    frame?: number;
 }
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+const getWordTiming = (word: { start: number; end: number }, fps: number) => {
+    const startFrame = Math.floor(word.start * fps);
+    const endFrame = Math.floor(word.end * fps);
+    return { startFrame, endFrame };
+};
+
+const getWordEmphasis = (
+    frame: number,
+    word: { start: number; end: number },
+    fps: number,
+    options?: { enterFrames?: number; exitFrames?: number },
+) => {
+    const enterFrames = options?.enterFrames ?? 6;
+    const exitFrames = options?.exitFrames ?? 6;
+    const { startFrame, endFrame } = getWordTiming(word, fps);
+    const active = frame >= startFrame && frame <= endFrame;
+
+    const enter = interpolate(
+        frame,
+        [startFrame, startFrame + enterFrames],
+        [0, 1],
+        {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: Easing.out(Easing.ease),
+        },
+    );
+
+    const exit = interpolate(frame, [endFrame, endFrame + exitFrames], [1, 0], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+        easing: Easing.in(Easing.ease),
+    });
+
+    return active ? enter : exit;
+};
 
 const Text: React.FC<TextProps> = ({
     alignedWords,
@@ -23,6 +70,9 @@ const Text: React.FC<TextProps> = ({
     minFontSize = 10,
     color = "#000",
     highlightColor = "red",
+    fontWeight,
+    activeScale = 1.08,
+    frame: frameOverride,
     ...props
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -30,8 +80,20 @@ const Text: React.FC<TextProps> = ({
 
     const [fontSize, setFontSize] = useState(maxFontSize);
 
-    const frame = useCurrentFrame();
+    const localFrame = useCurrentFrame();
+    const frame = frameOverride ?? localFrame;
     const { fps } = useVideoConfig();
+
+    const baseTextShadow = `
+        -4px -4px 0 #fff,  
+        4px -4px 0 #fff,   
+        -4px 4px 0 #fff,   
+        4px 4px 0 #fff,    
+        0px 4px 0 #fff,    
+        4px 0px 0 #fff,    
+        0px -4px 0 #fff,   
+        -4px 0px 0 #fff    
+    `;
 
     const adjustFontSize = useCallback(() => {
         const container = containerRef.current;
@@ -91,35 +153,38 @@ const Text: React.FC<TextProps> = ({
                     lineHeight: "1",
                     whiteSpace: "wrap",
                     color,
-                    textShadow: `
-            -4px -4px 0 #fff,  
-            4px -4px 0 #fff,   
-            -4px 4px 0 #fff,   
-            4px 4px 0 #fff,    
-            0px 4px 0 #fff,    
-            4px 0px 0 #fff,    
-            0px -4px 0 #fff,   
-            -4px 0px 0 #fff    
-          `,
+                    fontWeight,
+                    textShadow: baseTextShadow,
                 }}
                 className="text-center"
             >
-                {alignedWords.map((word, index) => (
-                    <span
-                        key={index}
-                        style={{
-                            display: "inline-block",
-                            color:
-                                frame >= Math.floor(word.start * fps) &&
-                                frame <= Math.floor(word.end * fps)
-                                    ? highlightColor
-                                    : color,
-                        }}
-                        dangerouslySetInnerHTML={{
-                            __html: `${sanitizeText(word.text)} &nbsp;`,
-                        }}
-                    />
-                ))}
+                {alignedWords.map((word, index) => {
+                    const { startFrame, endFrame } = getWordTiming(word, fps);
+                    const active = frame >= startFrame && frame <= endFrame;
+                    const emphasis = clamp01(getWordEmphasis(frame, word, fps));
+                    const scale =
+                        activeScale > 1 ? 1 + emphasis * (activeScale - 1) : 1;
+                    const glow = active ? 0.35 + emphasis * 0.25 : 0;
+
+                    return (
+                        <span
+                            key={index}
+                            style={{
+                                display: "inline-block",
+                                color: active ? highlightColor : color,
+                                transform: `scale(${scale})`,
+                                transformOrigin: "center bottom",
+                                textShadow:
+                                    glow > 0
+                                        ? `0 0 ${Math.round(18 * glow)}px ${highlightColor}88, ${baseTextShadow}`
+                                        : undefined,
+                            }}
+                            dangerouslySetInnerHTML={{
+                                __html: `${sanitizeText(word.text)} &nbsp;`,
+                            }}
+                        />
+                    );
+                })}
             </span>
         </div>
     );
