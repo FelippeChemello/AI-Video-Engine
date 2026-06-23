@@ -5,7 +5,7 @@ import { channelProviderAuthMap, VideoUploaderClient } from './interfaces/VideoU
 import { Channels } from '../config/types';
 import { Metric, SocialMediaClient } from './interfaces/SocialMedia';
 
-const YOUTUBE_METRICS_LIMIT = 100;
+const YOUTUBE_METRICS_LIMIT = 50;
 const YOUTUBE_VIDEOS_PAGE_SIZE = 50;
 const SHORTS_MAX_DURATION_SECONDS = 180;
 

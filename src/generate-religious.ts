@@ -16,16 +16,11 @@ import { generateLLMResponse } from './services/generate-llm-response';
 import { Modal } from './clients/modal';
 import { GPURunnerClient } from './clients/interfaces/GPURunner';
 
-const CHANNELS = [Channels.ALMA_DE_TERREIRO]
-const CHANCES_OF_VIDEO = 0.25;
-
-const generateVideo = Math.random() < CHANCES_OF_VIDEO;
-if (generateVideo) {
-    CHANNELS.push(Channels.ALMA_DE_TERREIRO_UMBANDA);
-}
-
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 const modal: GPURunnerClient = new Modal();
+
+const CHANCES_OF_VIDEO = 0.25;
+const generateVideo = Math.random() < CHANCES_OF_VIDEO;
 
 const ENABLED_FORMATS: Array<Compositions> = [
     Compositions.ReligiousLandscape,
@@ -37,6 +32,7 @@ const compositionVideoLengthMap: Partial<Record<Compositions, string>> = {
     [Compositions.ReligiousLandscape]: '5 minutos'
 };
 
+const date = new Date();
 const topic = process.argv[2]
 const groundingFilePath = process.argv[3]; // Optional grounding file path
 if (!topic) {
@@ -52,10 +48,16 @@ const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(as
         filesSrc: groundingFilePath ? [groundingFilePath] : undefined,
     });
 
+    const channels = [Channels.ALMA_DE_TERREIRO]
+    if (composition === Compositions.ReligiousPortraitVideo) {
+        channels.push(Channels.ALMA_DE_TERREIRO_UMBANDA);
+    }
+
     return {
         title: fullScript.title,
         segments: fullScript.segments,
         compositions: [composition],
+        channels,
     } satisfies ScriptWithTitle;
 })).then(scripts => scripts.flat());
 
@@ -78,7 +80,7 @@ for (const script of scripts) {
     const thumbnails = await generateThumbnails({
         videoTitle: topic,
         compositions: script.compositions!, 
-        channels: CHANNELS
+        channels: script.channels!,
     })
 
     const audio = await synthesizeSpeech(
@@ -114,9 +116,10 @@ for (const script of scripts) {
         script,
         thumbnailsSrc: thumbnails,
         formats: script.compositions!,
-        channels: CHANNELS,
+        channels: script.channels!,
         scriptSrc: path.basename(scriptTextFile),
-        avatarVideoSrc: videoFileName
+        avatarVideoSrc: videoFileName,
+        date
     })
 
     cleanupFiles([
