@@ -19,7 +19,7 @@ import { GPURunnerClient } from './clients/interfaces/GPURunner';
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 const modal: GPURunnerClient = new Modal();
 
-const CHANCES_OF_VIDEO = 0.25;
+const CHANCES_OF_VIDEO = 0;
 const generateVideo = Math.random() < CHANCES_OF_VIDEO;
 
 const ENABLED_FORMATS: Array<Compositions> = [
@@ -61,7 +61,7 @@ const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(as
     } satisfies ScriptWithTitle;
 })).then(scripts => scripts.flat());
 
-for (const script of scripts) {
+await Promise.all(scripts.map(async script => {
     const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
 
     if (!script.compositions?.includes(Compositions.ReligiousPortraitVideo)) {
@@ -100,7 +100,16 @@ for (const script of scripts) {
 
         if (!firstFrame) {
             console.error('Failed to generate the first frame for the video. Skipping video generation.');
-            continue;
+            await scriptManagerClient.saveScript({
+                script,
+                thumbnailsSrc: thumbnails,
+                formats: script.compositions!,
+                channels: script.channels!,
+                scriptSrc: path.basename(scriptTextFile),
+                avatarVideoSrc: videoFileName,
+                date
+            });
+            return;
         }
 
         const avatarVideo = await modal.generateAvatar(
@@ -131,5 +140,5 @@ for (const script of scripts) {
         ...script.segments
             .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
             .filter(Boolean) as Array<string>,
-    ].filter(Boolean) as Array<string>);
-}
+    ].filter(Boolean) as Array<string>)
+}));
