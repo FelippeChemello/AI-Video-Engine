@@ -23,6 +23,10 @@ type ThumbnailRequest = {
     customImage?: {
         prompt: string;
         src: string;
+        size: {
+            width: number;
+            height: number;
+        };
     };
     engines?: Array<ImageGeneratorClient>;
     textLanguage?: 'ENGLISH' | 'PORTUGUESE';
@@ -39,15 +43,23 @@ export async function generateThumbnails({
     const thumbnails: Array<string | undefined> = [];
 
     for (const composition of compositions) {
+        const orientation = compositionOrientationMap[composition];
+
         for (const channel of channels) {
-            const { prompter, imageBaseSrc } = customImage
-                ? { prompter: () => customImage.prompt, imageBaseSrc: customImage.src }
-                : channelThumbnailConfig[channel] || {};
+            const { prompter, imageBaseSrc, size } = customImage
+                ? { prompter: () => customImage.prompt, imageBaseSrc: customImage.src, size: customImage.size }
+                : { ...channelThumbnailConfig[channel], size: channelThumbnailConfig[channel]?.size[orientation] }
+
+            if (!size) {
+                console.warn(`No thumbnail size configuration found for channel ${channel} and orientation ${orientation}. Skipping thumbnail generation.`);
+                continue;
+            }
 
             const prompt = prompter ? prompter(title) : undefined;
             const options: ThumbnailParams = {
                 videoTitle: title,
                 orientation: compositionOrientationMap[composition],
+                size,
                 thumbnailTextLanguage: textLanguage,
                 customImage:
                     imageBaseSrc && prompt

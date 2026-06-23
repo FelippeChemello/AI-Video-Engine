@@ -19,12 +19,17 @@ import { GPURunnerClient } from './clients/interfaces/GPURunner';
 const CHANNELS = [Channels.ALMA_DE_TERREIRO]
 const CHANCES_OF_VIDEO = 0.25;
 
+const generateVideo = Math.random() < CHANCES_OF_VIDEO;
+if (generateVideo) {
+    CHANNELS.push(Channels.ALMA_DE_TERREIRO_UMBANDA);
+}
+
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 const modal: GPURunnerClient = new Modal();
 
 const ENABLED_FORMATS: Array<Compositions> = [
     Compositions.ReligiousLandscape,
-    ...(Math.random() < CHANCES_OF_VIDEO ? [Compositions.ReligiousPortraitVideo] : [Compositions.ReligiousPortrait]),
+    ...(generateVideo ? [Compositions.ReligiousPortraitVideo] : [Compositions.ReligiousPortrait]),
 ];
 const compositionVideoLengthMap: Partial<Record<Compositions, string>> = {
     [Compositions.ReligiousPortraitVideo]: '30/45 segundos',

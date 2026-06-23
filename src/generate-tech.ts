@@ -18,7 +18,7 @@ import { Modal } from './clients/modal';
 import { TTSClient } from './clients/interfaces/TTS';
 import { GeminiClient } from './clients/gemini';
 
-const CHANNELS = [Channels.CODESTACK]
+const CHANNELS = [Channels.CODESTACK, Channels.FELIPPE_DEV]
 
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 const gemini: TTSClient = new GeminiClient()

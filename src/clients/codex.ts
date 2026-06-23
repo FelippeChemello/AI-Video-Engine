@@ -373,6 +373,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
     async generateThumbnail({
         videoTitle,
         orientation,
+        size,
         customImage,
         thumbnailTextLanguage = 'PORTUGUESE'
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
@@ -399,7 +400,7 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
                         }
                     ]
                 }],
-                tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', output_format: 'png', size: orientation === Orientation.PORTRAIT ? '720x1280' : '1280x720', model: 'gpt-image-2' }],
+                tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', output_format: 'png', size: `${size.width}x${size.height}`, model: 'gpt-image-2' }],
                 tool_choice: "required",
                 stream: true,
                 store: false,

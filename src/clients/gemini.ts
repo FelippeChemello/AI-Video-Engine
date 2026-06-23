@@ -125,6 +125,19 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         }
     }
 
+    private getAspectRatio(width: number, height: number): string {
+        const gcd = (a: number, b: number): number => {
+            if (!b) return a;
+            return gcd(b, a % b);
+        };
+
+        const divisor = gcd(width, height);
+        const aspectWidth = width / divisor;
+        const aspectHeight = height / divisor;
+
+        return `${aspectWidth}:${aspectHeight}`;
+    }
+
     async generate({
         prompt,
         baseImageSrc,
@@ -135,7 +148,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
             console.log(`[GEMINI] Generating image with prompt: ${prompt}`);
 
             const imageResult = await genAI.models.generateContent({
-                model: 'gemini-3.1-flash-image-preview',
+                model: 'gemini-3.1-flash-image',
                 contents: [
                     { text: prompt },
                     ...(baseImageSrc ? [{ text: 'Use the following image as a reference for the illustration. Do not include any text in the image, only use it as a visual reference to create a new illustration that is consistent with it.', inlineData: { mimeType: 'image/png', data: fs.readFileSync(baseImageSrc).toString('base64') } }] : [])
@@ -187,6 +200,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
     }
 
     async generateThumbnail({
+        size,
         orientation,
         videoTitle,
         customImage,
@@ -199,7 +213,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
         const img = customImage ? fs.readFileSync(customImage.src).toString('base64') : undefined
 
         const imageResult = await genAI.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
+            model: 'gemini-3.1-flash-image',
             contents: [
                 { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video, at same time simple and minimalist. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic.` },
                 { text: `Video Title: ${videoTitle}` },
@@ -212,7 +226,7 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
                 thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
                 responseModalities: ['text', 'image'],
                 imageConfig: { 
-                    aspectRatio: orientation === 'Portrait' ? '9:16' : '16:9', 
+                    aspectRatio: this.getAspectRatio(size.width, size.height),
                     imageSize: "1K"
                 },
             }

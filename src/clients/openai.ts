@@ -140,6 +140,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
     async generateThumbnail({
         videoTitle,
+        size,
         orientation,
         customImage,
         thumbnailTextLanguage = 'PORTUGUESE'
@@ -170,7 +171,7 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
                     }
                 ]
             }],
-            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', output_format: 'png', size: orientation === Orientation.PORTRAIT ? '720x1280' : '1280x720', model: 'gpt-image-2' }],
+            tools: [{ type: 'image_generation', quality: 'high', background: 'opaque', output_format: 'png', size: `${size.width}x${size.height}`, model: 'gpt-image-2' }],
         })
 
         const imageData = response.output.find(out => out.type === 'image_generation_call');

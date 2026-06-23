@@ -146,6 +146,7 @@ for (const scriptIndex in scripts) {
 
         await defaultScriptManager.setSEO(script.id, seo);
 
+        let channelsUploaded = 0;
         for (const video of videos) {
             for (const channel of script.channels || []) {
                 const thumbnail = script.thumbnails?.find(t => {
@@ -174,11 +175,18 @@ for (const scriptIndex in scripts) {
                     publishDate
                 ).then(async result => {
                     console.log(`Video uploaded successfully for script ${script.title} to channel ${channel}: ${result.url}`);
-                    await defaultScriptManager.updateScriptStatus(script.id!, ScriptStatus.PUBLISHED);
+                    channelsUploaded++;
                 }).catch(error => {
                     console.error(`Error uploading video for script ${script.title} to channel ${channel}:`, error)
                 });
             }
+        }
+
+        if (channelsUploaded === script.channels?.length * videos.length) {
+            console.log(`All videos uploaded successfully for script ${script.title}.`);
+            await defaultScriptManager.updateScriptStatus(script.id!, ScriptStatus.PUBLISHED);
+        } else {
+            console.warn(`Some videos failed to upload for script ${script.title}.`);
         }
         
         console.log(`Cleaning up assets for script ${script.title}...`);

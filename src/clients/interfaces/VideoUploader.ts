@@ -15,6 +15,12 @@ export const channelProviderAuthMap: Record<Channels, Record<Providers, string |
     [Channels.ALMA_DE_TERREIRO]: {
         [Providers.YOUTUBE]: ENV.YOUTUBE_REFRESH_TOKEN_ALMA_DE_TERREIRO
     },
+    [Channels.ALMA_DE_TERREIRO_UMBANDA]: {
+        [Providers.YOUTUBE]: null
+    },
+    [Channels.FELIPPE_DEV]: {
+        [Providers.YOUTUBE]: null
+    }
 }
 
 export interface VideoUploaderClient {

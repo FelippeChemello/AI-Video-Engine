@@ -30,7 +30,9 @@ export const channelAssetsMap: Record<Channels, null | { backgroundPaths: Array<
             path.resolve(publicDir, 'assets', 'river-3.gif'),
             path.resolve(publicDir, 'assets', 'river-4.gif'),
         ]
-    }
+    },
+    [Channels.ALMA_DE_TERREIRO_UMBANDA]: null,
+    [Channels.FELIPPE_DEV]: null
 }
 
 export interface ScriptManagerClient {

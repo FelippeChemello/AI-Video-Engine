@@ -28,6 +28,8 @@ export enum Channels {
     CODESTACK = 'CodeStack',
     RED_FLAG_RADAR = 'RedFlagRadar',
     ALMA_DE_TERREIRO = 'AlmaDeTerreiro',
+    ALMA_DE_TERREIRO_UMBANDA = 'AlmaDeTerreiroUmbanda',
+    FELIPPE_DEV = 'Felippe_Dev',
 }
 
 export const compositionOrientationMap: { [key in Compositions]: Orientation } = {
