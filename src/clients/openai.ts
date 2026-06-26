@@ -12,7 +12,6 @@ import { Orientation, Script } from '../config/types';
 import { concatAudioFiles } from '../utils/concat-audio-files';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent, AgentOutput, OPENAI_DEFAULT_MODEL } from './interfaces/LLM';
-import { titleToFileName } from '../utils/title-to-filename';
 import { zodTextFormat } from 'openai/helpers/zod.mjs';
 import { cleanupFiles } from '../services/cleanup-files';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
@@ -140,19 +139,20 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
     async generateThumbnail({
         videoTitle,
+        filename,
         size,
         orientation,
         customImage,
         thumbnailTextLanguage = 'PORTUGUESE'
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
-        console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle}`);
+        console.log(`[OPENAI] Generating thumbnail for script: ${videoTitle} - size: ${size.width}x${size.height} - orientation: ${orientation} - language: ${thumbnailTextLanguage}`);
         
         // @ts-expect-error the OpenAI client types are not up to date with the latest API changes, and the responses.create method does not allow for the tools parameter yet, but it is required for image generation
         const response = await openai.responses.create({
             model: OPENAI_DEFAULT_MODEL,
             input: [{
                 role: 'system',
-                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
+                content: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`
             }, {
                 role: 'user',
                 content: customImage ? [ 
@@ -181,11 +181,11 @@ export class OpenAIClient implements TTSClient, ImageGeneratorClient, LLMClient 
 
         let mediaSrc: string | undefined
 
-        const filename = `openai-${titleToFileName(videoTitle)}-Thumbnail-${orientation}.png`;
-        const imagePath = path.join(outputDir, filename);
+        const mediaFilename = `openai-${filename}.png`;
+        const imagePath = path.join(outputDir, mediaFilename);
         if (imageData) {
             fs.writeFileSync(imagePath, Buffer.from(imageData.result!, 'base64'));
-            mediaSrc = filename;
+            mediaSrc = mediaFilename;
         }
 
         return { mediaSrc }

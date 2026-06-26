@@ -19,6 +19,7 @@ export type GenerationParams = {
 
 export type ThumbnailParams = {
     videoTitle: string;
+    filename: string;
     size: {
         width: number;
         height: number;

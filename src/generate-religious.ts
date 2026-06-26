@@ -19,7 +19,7 @@ import { GPURunnerClient } from './clients/interfaces/GPURunner';
 const scriptManagerClient: ScriptManagerClient = new NotionClient();
 const modal: GPURunnerClient = new Modal();
 
-const CHANCES_OF_VIDEO = 0;
+const CHANCES_OF_VIDEO = 0.3;
 const generateVideo = Math.random() < CHANCES_OF_VIDEO;
 
 const ENABLED_FORMATS: Array<Compositions> = [
@@ -62,7 +62,7 @@ const scripts: Array<ScriptWithTitle> = await Promise.all(ENABLED_FORMATS.map(as
 })).then(scripts => scripts.flat());
 
 await Promise.all(scripts.map(async script => {
-    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}.txt`);
+    const scriptTextFile = saveScriptFile(script.segments, `${titleToFileName(script.title)}-${script.compositions?.join('-')}.txt`);
 
     if (!script.compositions?.includes(Compositions.ReligiousPortraitVideo)) {
         await Promise.all(

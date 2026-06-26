@@ -9,7 +9,6 @@ import { outputDir, publicDir } from '../config/path';
 import { Orientation } from '../config/types';
 import { ImageGeneratorClient, GenerationParams, ThumbnailParams } from './interfaces/ImageGenerator';
 import { Agents, LLMClient, Agent, AgentOutput, CODEX_DEFAULT_MODEL } from './interfaces/LLM';
-import { titleToFileName } from '../utils/title-to-filename';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
 
 export const REFRESH_URL = "https://auth.openai.com/oauth/token";
@@ -372,16 +371,17 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
 
     async generateThumbnail({
         videoTitle,
+        filename,
         orientation,
         size,
         customImage,
         thumbnailTextLanguage = 'PORTUGUESE'
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
-        console.log(`[CODEX] Generating thumbnail for script: ${videoTitle}`);
+        console.log(`[CODEX] Generating thumbnail for script: ${videoTitle} - size: ${size.width}x${size.height} - orientation: ${orientation} - language: ${thumbnailTextLanguage}`);
         
         const response = await this.postCodex({
                 model: CODEX_DEFAULT_MODEL,
-                instructions: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === Orientation.PORTRAIT ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`,
+                instructions: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`,
                 input: [{
                     role: 'user',
                     content: customImage ? [ 
@@ -408,7 +408,6 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
 
         const stream = this.iterateServerSentEvents(response.body);
 
-        const filename = `${titleToFileName(videoTitle)}-Thumbnail-${orientation}`;
         const { mediaSrc } = await this.saveImage(stream, filename, outputDir);        
 
         return { mediaSrc }

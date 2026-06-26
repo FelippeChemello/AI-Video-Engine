@@ -13,7 +13,6 @@ import { Speaker, TTSClient, voices } from './interfaces/TTS';
 import { Script } from '../config/types';
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { Agent, AgentOutput, Agents, LLMClient } from './interfaces/LLM';
-import { titleToFileName } from '../utils/title-to-filename';
 import { convertToWav } from '../utils/save-wav-file';
 import { sleep } from '../utils/sleep';
 import { getMimetypeFromFilename } from '../utils/get-mimetype-from-filename';
@@ -201,21 +200,21 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
     async generateThumbnail({
         size,
+        filename,
         orientation,
         videoTitle,
         customImage,
         thumbnailTextLanguage = 'PORTUGUESE'
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
+        console.log(`[GEMINI] Generating thumbnail for script: ${videoTitle} - size: ${size.width}x${size.height} - orientation: ${orientation} - language: ${thumbnailTextLanguage}`);
+        
         let mediaSrc: string | undefined
-
-        console.log(`[GEMINI] Generating thumbnail for script: ${videoTitle}`);
-
         const img = customImage ? fs.readFileSync(customImage.src).toString('base64') : undefined
 
         const imageResult = await genAI.models.generateContent({
             model: 'gemini-3.1-flash-image',
             contents: [
-                { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail with a ${orientation === 'Portrait' ? '9:16' : '16:9'} aspect ratio, suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video, at same time simple and minimalist. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic.` },
+                { text: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail suitable for ${orientation === 'Portrait' ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video, at same time simple and minimalist. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic.` },
                 { text: `Video Title: ${videoTitle}` },
                 ...(customImage ? [
                     { text: customImage.prompt },
@@ -250,15 +249,15 @@ export class GeminiClient implements ImageGeneratorClient, TTSClient, LLMClient 
 
                 const imageBuffer = Buffer.from(base64Data, 'base64')
 
-                const filename = `gemini-${titleToFileName(videoTitle)}-Thumbnail-${orientation}.png`;
-                const imagePath = path.join(outputDir, filename);
+                const mediaFilename = `gemini-${filename}.png`;
+                const imagePath = path.join(outputDir, mediaFilename);
                 if (imageBuffer) {
                     fs.writeFileSync(imagePath, imageBuffer);
-                    mediaSrc = filename;
+                    mediaSrc = mediaFilename;
                 }
                 console.log(`[GEMINI] Image saved to ${imagePath}`);
                 
-                return { mediaSrc: filename }
+                return { mediaSrc: mediaFilename }
             }
         }
 

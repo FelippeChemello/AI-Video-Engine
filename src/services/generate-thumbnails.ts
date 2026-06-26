@@ -11,6 +11,7 @@ import {
     compositionOrientationMap,
     Compositions,
 } from "../config/types";
+import { titleToFileName } from "../utils/title-to-filename";
 
 const codex: ImageGeneratorClient = new CodexClient();
 const gemini: ImageGeneratorClient = new GeminiClient();
@@ -41,9 +42,10 @@ export async function generateThumbnails({
     engines = [codex, openai, gemini],
 }: ThumbnailRequest): Promise<Array<string>> {
     const thumbnails: Array<string | undefined> = [];
+    const generatedSizes = new Set<string>();
 
     for (const composition of compositions) {
-        const orientation = compositionOrientationMap[composition];
+        const orientation = compositionOrientationMap[composition]; 
 
         for (const channel of channels) {
             const { prompter, imageBaseSrc, size } = customImage
@@ -55,9 +57,18 @@ export async function generateThumbnails({
                 continue;
             }
 
+            const sizeKey = `${size.width}x${size.height}`;
+            if (generatedSizes.has(sizeKey)) {
+                console.log(`Thumbnail size ${sizeKey} already generated. Skipping duplicate for composition ${composition} and channel ${channel}.`);
+                continue;
+            }
+
+            generatedSizes.add(sizeKey);
+
             const prompt = prompter ? prompter(title) : undefined;
             const options: ThumbnailParams = {
                 videoTitle: title,
+                filename: `${titleToFileName(title)}-Thumbnail-${sizeKey}`,
                 orientation: compositionOrientationMap[composition],
                 size,
                 thumbnailTextLanguage: textLanguage,
