@@ -27,11 +27,17 @@ export class Modal implements GPURunnerClient {
 
         console.log(`[MODAL] Generating avatar video with call ID: ${call.functionCallId}`)
 
-        const result = await call.get({ timeoutMs: TWO_HOURS_IN_MS })
+        const result = await this.awaitFunctionCallAndGetResult(call.functionCallId)
 
         const videoSrc = `avatar-${v4()}.mp4`;
-        fs.writeFileSync(path.resolve(outputDir, videoSrc), Buffer.from(result))
+        fs.writeFileSync(path.resolve(outputDir, videoSrc), result)
 
         return { videoSrc };
+    }
+
+    async awaitFunctionCallAndGetResult(functionCallId: string): Promise<Buffer> {
+        const call = await this.client.functionCalls.fromId(functionCallId)
+        const result = await call.get({ timeoutMs: TWO_HOURS_IN_MS })
+        return Buffer.from(result)
     }
 }
