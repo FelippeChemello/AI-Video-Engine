@@ -23,6 +23,7 @@ import { SharpClient } from './clients/sharp';
 import { getPublishDate } from './utils/get-publish-date';
 import { cleanupFiles } from './services/cleanup-files';
 import { generateLLMResponse } from './services/generate-llm-response';
+import { channelThumbnailConfig } from './clients/interfaces/ImageGenerator';
 
 const MAX_DURATION_FOR_SHORT_CONVERSION = 350;
 const MAX_DURATION_OF_SHORT_VIDEO = 175;
@@ -150,8 +151,9 @@ for (const scriptIndex in scripts) {
         for (const video of videos) {
             for (const channel of script.channels || []) {
                 const thumbnail = script.thumbnails?.find(t => {
-                    const thumbOrientation = compositionOrientationMap[video.composition];
-                    return t.filename.includes(thumbOrientation);
+                    const thumbSizeConfig = channelThumbnailConfig[channel]?.size[compositionOrientationMap[video.composition]];
+                    const thumbSize = thumbSizeConfig ? `${thumbSizeConfig.width}x${thumbSizeConfig.height}` : undefined;
+                    return t.filename.includes(thumbSize || Infinity.toString());
                 })
 
                 const thumbnailFilePath = thumbnail 
@@ -207,26 +209,16 @@ for (const scriptIndex in scripts) {
 
         await defaultScriptManager.updateScriptStatus(script.id, ScriptStatus.ERROR);
         
-        for (const audio of script.audio) {
-            const audioFilePath = path.join(publicDir, audio.src);
-            if (fs.existsSync(audioFilePath)) {
-                fs.unlinkSync(audioFilePath);
-            }
-        }
-        
-        const scriptFilePath = path.join(publicDir, `script-${script.id}.json`);
-        if (fs.existsSync(scriptFilePath)) {
-            fs.unlinkSync(scriptFilePath);
-        }
-        
-        for (const segment of script.segments) {
-            if (segment.mediaSrc) {
-                const mediaFilePath = path.join(publicDir, segment.mediaSrc);
-                if (fs.existsSync(mediaFilePath)) {
-                    fs.unlinkSync(mediaFilePath);
-                }
-            }
-        }
+        const filesToCleanup = [
+            ...script.audio.map(a => path.join(publicDir, a.src)),
+            path.join(publicDir, `script-${script.id}.json`),
+            ...script.segments
+                .map(segment => segment.mediaSrc ? path.join(publicDir, segment.mediaSrc) : null)
+                .filter(Boolean) as Array<string>,
+            ...script.thumbnails?.map(t => path.join(outputDir, t.src)) || []
+        ];
+
+        cleanupFiles(filesToCleanup);
     }
 }
 

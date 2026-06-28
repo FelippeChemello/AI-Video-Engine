@@ -332,6 +332,19 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
         throw new Error(`[CODEX] Stream ended without receiving complete image data`);
     }
 
+    private getAspectRatio(width: number, height: number): string {
+        const gcd = (a: number, b: number): number => {
+            if (!b) return a;
+            return gcd(b, a % b);
+        };
+
+        const divisor = gcd(width, height);
+        const aspectWidth = width / divisor;
+        const aspectHeight = height / divisor;
+
+        return `${aspectWidth}:${aspectHeight}`;
+    }
+
     async generate({
         prompt,
         baseImageSrc,
@@ -379,9 +392,11 @@ export class CodexClient implements ImageGeneratorClient, LLMClient {
     }: ThumbnailParams): Promise<{ mediaSrc?: string; }> {
         console.log(`[CODEX] Generating thumbnail for script: ${videoTitle} - size: ${size.width}x${size.height} - orientation: ${orientation} - language: ${thumbnailTextLanguage}`);
         
+        const aspectRation = this.getAspectRatio(size.width, size.height);
+
         const response = await this.postCodex({
                 model: CODEX_DEFAULT_MODEL,
-                instructions: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail suitable for ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'}. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`,
+                instructions: `You are a thumbnail generator AI. Your task is to create a thumbnail for a ${orientation === Orientation.PORTRAIT ? 'TikTok' : 'Youtube'} video based on the provided details. Always generate a thumbnail in ${aspectRation} proportion. The thumbnail should be visually appealing and relevant to the content of the video. The text should be concise and engaging, ideally no more than 5 words in ${thumbnailTextLanguage}. The thumbnail should include the person acting some action related to the video topic. Include margins and avoid cutting off parts of the image.`,
                 input: [{
                     role: 'user',
                     content: customImage ? [ 

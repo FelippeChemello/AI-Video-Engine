@@ -71,7 +71,7 @@ const Text: React.FC<TextProps> = ({
     color = "#000",
     highlightColor = "red",
     fontWeight,
-    activeScale = 1.08,
+    activeScale = 1,
     frame: frameOverride,
     ...props
 }) => {

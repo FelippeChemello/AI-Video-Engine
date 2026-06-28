@@ -56,8 +56,8 @@ const thumbnailSize = {
     },
     tiktok: {
         [Orientation.PORTRAIT]: {
-            width: 1080,
-            height: 1350
+            width: 1024,
+            height: 1280
         },
     }
 }
